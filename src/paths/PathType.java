@@ -1,0 +1,5 @@
+package paths;
+
+public enum PathType {
+	INVERSE, ZEROORMORE, ONEORMORE, ZEROORONE, PREDICATE, SEQUENCE, ALTERNATIVE
+}
