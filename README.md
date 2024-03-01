@@ -1,10 +1,10 @@
 # SHACL2FOL
 
-The SHACL2FOL tool allows you to convert SHACL into first order logic sentences in the SCL language (described here: https://arxiv.org/abs/2108.13063 ) and compute the answer to a number of decision problems.
+The SHACL2FOL tool allows you to convert SHACL into first order logic sentences in the SCL language (described here: [Paolo Pareti, George Konstantinidis, Fabio Mogavero. Satisfiability and Containment of Recursive SHACL. Journal of Web Semantics (2022)](https://doi.org/10.1016/j.websem.2022.100721) ) and compute the answer to a number of decision problems.
 
 Currently, it supports three modes:
 
-* In the validation mode, SHACL2FOL transforms a shape graph into a first order logic theory that is satisfiable iff the original shape graph is satisfiable.
+* In the satisfiability mode, SHACL2FOL transforms a shape graph into a first order logic theory that is satisfiable iff the original shape graph is satisfiable.
 * In the containment mode, SHACL2FOL transforms two shape graphs into a first order logic theory that is UNsatisfiable iff the first shape graph is contained in the second.
 * In the validity mode, SHACL2FOL transforms a shape graph and a data graph into a first order logic theory that is satisfiable iff the shape graph validates the data graph.
 
