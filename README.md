@@ -15,7 +15,9 @@ The outputs of this tool are two:
 
 ## Installation
 
-1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ .
+This software was tested on Ubuntu, and depending on the theorem prover you decide to use, it might not work on Windows.
+
+1. Install a theorem prover. The recommended one is Vampire [http://www.vprover.org/](https://vprover.github.io/) .
 2. Configure the config.properties file with the path to the theorem prover executable .
 3. Run the SHACL2FOL.jar jar file with the following arguments:
 
@@ -28,11 +30,10 @@ To perform a containment check (does the first shape graph contain the second?):
 * arg[1] the path to the first shape graph
 * arg[2] the path to the second shape graph
 
-To perform a validity check:
+To perform a validation check:
 * arg[0] the letter 'v'
 * arg[1] the path to the shape graph
 * arg[2] the path to the data graph
-
 
 ## Using a TPTP file with the E theorem prover
 
@@ -49,7 +50,84 @@ If your TPTP file is satisfiable (and thus if the original SHACL document is sat
 
 Out of the filter components, only the sh:NodeKind has been implemented. All of the other SHACL core constraint components and target components have been implemented. 
 
+## Sample Usage
+
+The `runnable` folder contains a number of sample shape and data graphs:
+* `StudentShapes.ttl`, `M1.ttl` and `M2.ttl` are shape graphs
+* `StudentGraphSat.ttl` and `StudentGraphUnsat.ttl` are data graphs
+
+### Satisfiability checks
+
+Command: `java -jar SHACL2FOL.jar s M1.ttl`
+Output: 
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Performing Satisfiability check of M1.ttl
+Is satisfiable? true
+Memory (KB) 4861
+Time (s) 0.018
+```
+
+### Containment checks
+
+Command: `java -jar SHACL2FOL.jar c M1.ttl M2.ttl`
+Output:
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Does shape graph M1.ttl
+... contain shape graph M2.ttl?
+Is the first shape graph contained in the second? true
+Whenever a data graph is validated by the first, it is also validated by the second.
+Memory (KB) 4989
+Time (s) 0.018
+```
+
+Command: `java -jar SHACL2FOL.jar c M2.ttl M1.ttl`
+Output:
+```
+efault prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Does shape graph M2.ttl
+... contain shape graph M1.ttl?
+Is the first shape graph contained in the second? false
+There exists a data graph validated by the first but not by the second.
+Memory (KB) 4989
+Time (s) 0.022
+```
+
+### Validation checks
+
+Command: `java -jar SHACL2FOL.jar v StudentShapes.ttl StudentGraphSat.ttl`
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Performing Validity check of data graph StudentGraphSat.ttl
+... with respect to shape graph StudentShapes.ttl
+Is data graph valid? true
+Memory (KB) 4989
+Time (s) 0.019
+```
+
+Command `java -jar SHACL2FOL.jar v StudentShapes.ttl StudentGraphUnsat.ttl`
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Performing Validity check of data graph StudentGraphUnsat.ttl
+... with respect to shape graph StudentShapes.ttl
+Is data graph valid? false
+Memory (KB) 4989
+Time (s) 0.018
+```
+
 ## Useful links:
+* Vampire theorem prover [http://www.vprover.org/](https://vprover.github.io/)
 * E Prover homepage https://wwwlehre.dhbw-stuttgart.de/~sschulz/E/E.html
 * TPTP Syntax http://www.tptp.org/TPTP/SyntaxBNF.html
 * TPTP Format Problem http://www.tptp.org/TPTP/QuickGuide/Problems.html
