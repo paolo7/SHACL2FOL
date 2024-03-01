@@ -2,6 +2,8 @@
 
 The SHACL2FOL tool allows you to convert SHACL into first order logic sentences in the SCL language (described here: [Paolo Pareti, George Konstantinidis, Fabio Mogavero. Satisfiability and Containment of Recursive SHACL. Journal of Web Semantics (2022)](https://doi.org/10.1016/j.websem.2022.100721) ) and compute the answer to a number of decision problems.
 
+It is developed by [Paolo Pareti ](https://paolopareti.uk/)
+
 Currently, it supports three modes:
 
 * In the satisfiability mode, SHACL2FOL transforms a shape graph into a first order logic theory that is satisfiable iff the original shape graph is satisfiable.
@@ -48,12 +50,13 @@ If your TPTP file is satisfiable (and thus if the original SHACL document is sat
 
 ## Limitations
 
-Out of the filter components, only the sh:NodeKind has been implemented. All of the other SHACL core constraint components and target components have been implemented. 
+Out of the filter components, only the sh:NodeKind has been implemented. There is currently a bug that affects sh:targetSubjectsOf and sh:targetObjectsOf, making their axiom translation empty. 
+All of the other SHACL core constraint components and target components have been implemented. 
 
 ## Sample Usage
 
 The `runnable` folder contains a number of sample shape and data graphs:
-* `StudentShapes.ttl`, `M1.ttl` and `M2.ttl` are shape graphs
+* `StudentShapes.ttl`, `M1.ttl`, `M2.ttl` and `M3.ttl` are shape graphs
 * `StudentGraphSat.ttl` and `StudentGraphUnsat.ttl` are data graphs
 
 ### Satisfiability checks
@@ -68,6 +71,18 @@ Performing Satisfiability check of M1.ttl
 Is satisfiable? true
 Memory (KB) 4861
 Time (s) 0.018
+```
+
+Command: `java -jar SHACL2FOL.jar s M3.ttl`
+Output: 
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Performing Satisfiability check of M3.ttl
+Is satisfiable? false
+Memory (KB) 4989
+Time (s) 0.02
 ```
 
 ### Containment checks
