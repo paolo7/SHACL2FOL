@@ -203,7 +203,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 	}
 
 	@Override
-	public void addSubjectOfTargets(Resource s, Set<Resource> properties, boolean invertProperties) {
+	public void addSubjectsOfTargets(Resource s, Set<Resource> properties, boolean invertProperties) {
 		addSubjectOfTargets(s, properties, invertProperties, true);
 	}
 	@Override
@@ -227,7 +227,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 		while (i.hasNext()) {
 			Resource p = i.next();
 			String property_s = lookup(p,'p');
-			tptp += ls+indent+"( ![X,Y] : ( "+property_s+(invertProperties ? "(Y,X)" : "(X,Y)")+" => "+shape+"(X) ) )";
+			axiom += ls+indent+"( ![X,Y] : ( "+property_s+(invertProperties ? "(Y,X)" : "(X,Y)")+" => "+shape+"(X) ) )";
 			if (i.hasNext())
 				tptp += " & ";
 		}

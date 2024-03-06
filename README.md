@@ -50,8 +50,8 @@ If your TPTP file is satisfiable (and thus if the original SHACL document is sat
 
 ## Limitations
 
-Out of the filter components, only the sh:NodeKind has been implemented. There is currently a bug that affects sh:targetSubjectsOf and sh:targetObjectsOf, making their axiom translation empty. 
-All of the other SHACL core constraint components and target components have been implemented. 
+* Out of the filter components, only the sh:NodeKind has been implemented. All of the other SHACL core constraint components and target components have been implemented. 
+* All shapes must be IRIs, and not blank nodes. For example, instead of creating a property constraint using (in Turtle syntax) `:shape_A sh:property [ ...XYZ... ]`, create a specific IRI for that property instead, which is defined later as usual `:shape_A sh:property :PROP_A . :PROP_A ...XYZ... `. 
 
 ## Sample Usage
 

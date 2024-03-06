@@ -19,7 +19,7 @@ public interface FOL_Encoder {
 
 	public void addClassTargets(Resource s, Set<Resource> classTargets);
 
-	public void addSubjectOfTargets(Resource s, Set<Resource> properties, boolean invertProperties);
+	public void addSubjectsOfTargets(Resource s, Set<Resource> properties, boolean invertProperties);
 	
 	public void addNodeTargets(Resource s, Set<Value> values, boolean positiveTarget);
 

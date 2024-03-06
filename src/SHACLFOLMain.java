@@ -22,9 +22,7 @@ public class SHACLFOLMain {
 		Config.readDefaultConfig();
 		String outputFilename = Config.tptpOutputFile;
 		String proverCommand = Config.proverPath;
-		
-		//testSAT("/home/office/SHACL2FOL/SHACL2FOL/shapes/test.ttl",outputFilename,proverCommand);
-		
+				
 		System.out.println("Default prover command "+proverCommand);
 		System.out.println("Default file where to store the TPTP output "+outputFilename);
 		System.out.println("These defaults can be changed in the config.properties configuration file.");

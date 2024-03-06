@@ -481,8 +481,8 @@ public class ShapeReader {
 			convert_class_targets(s,encoder,false);
 			convert_subject_of_targets(s,encoder,false);
 			convert_object_of_targets(s,encoder,false);
+			encoder.addNegatedTargetAxioms();
 		}
-		encoder.addNegatedTargetAxioms();
 	}
 	public void convert_node_targets(Resource s, FOL_Encoder encoder, boolean positive) {
 		Set<Value> nodeTargets = getAllValueObjectsOf(s,sh_targetNode, (positive ? conn : connData));

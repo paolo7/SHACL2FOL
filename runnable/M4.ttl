@@ -1,0 +1,21 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix : <http://e.com/> .
+
+# ShapeAlex states that there is a constant Alex that has a supervisor. This is to avoid the trivial case of validating an empty graph. ShapeOne requires Alex to have supervisors from no more than one faculty. However Shape 2 requires supervisors to be in at least 2 faculties.
+
+:shapeAlex a sh:PropertyShape ;
+  sh:targetNode :Alex ;
+  sh:path :hasSupervisor;
+  sh:minCount 1 .
+  
+:shapeOne a sh:PropertyShape ;
+  sh:targetSubjectsOf :hasSupervisor ;
+  sh:path ( :hasSupervisor :hasFaculty );
+  sh:maxCount 1 .
+  
+:shapeTwo a sh:PropertyShape ;
+  sh:targetObjectsOf :hasSupervisor ;
+  sh:path :hasFaculty ;
+  sh:minCount 2 .

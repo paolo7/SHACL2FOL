@@ -3,6 +3,8 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix : <http://e.com/> .
 
+# shapeOne and shapeTwo clearly have conflicting cardinality constraints over the same path for the same target Alex
+
 :shapeOne a sh:PropertyShape ;
   sh:targetClass :A ;
   sh:targetNode :Alex ;
