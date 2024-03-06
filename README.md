@@ -85,6 +85,18 @@ Memory (KB) 4989
 Time (s) 0.02
 ```
 
+Command: `java -jar SHACL2FOL.jar s M4.ttl`
+Output: 
+```
+Default prover command ./vampire
+Default file where to store the TPTP output ./testOUT.tptp
+These defaults can be changed in the config.properties configuration file.
+Performing Satisfiability check of M4.ttl
+Is satisfiable? false
+Memory (KB) 4989
+Time (s) 0.034
+```
+
 ### Containment checks
 
 Command: `java -jar SHACL2FOL.jar c M1.ttl M2.ttl`
