@@ -153,6 +153,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getNodeTargetAxiom(s, values);
 			tptp += ls+ indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}	
 			negatedTargetAxioms += ls + indent + getNodeTargetAxiom(s, values);
 		}
 	}
@@ -185,6 +188,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getClassTargetsAxiom(s, classes);
 			tptp += ls + indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}	
 			negatedTargetAxioms += ls + indent + getClassTargetsAxiom(s, classes);
 		}
 	}
@@ -217,6 +223,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getSubjectOfTargetsAxioms(s, properties, invertProperties);
 			tptp += ls+ indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}	
 			negatedTargetAxioms += ls + indent + getSubjectOfTargetsAxioms(s, properties, invertProperties);
 		}
 	}
