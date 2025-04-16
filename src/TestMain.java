@@ -1,20 +1,14 @@
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
-import org.eclipse.rdf4j.repository.sail.SailRepositoryConnection;
-import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
-import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.UnsupportedRDFormatException;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
@@ -104,7 +98,7 @@ public class TestMain {
 		outStream.close();
 		
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(proverCommand+" "+pathToTPTP);
+		Process pr = rt.exec(new String[] {proverCommand, pathToTPTP});
 		InputStream consoleOutput = pr.getInputStream();
 		
 		StringBuilder textBuilder = new StringBuilder();
@@ -149,7 +143,7 @@ public class TestMain {
 		outStream.close();
 		
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(proverCommand+" "+pathToTPTP);
+		Process pr = rt.exec(new String[] {proverCommand,pathToTPTP});
 		InputStream consoleOutput = pr.getInputStream();
 		
 		StringBuilder textBuilder = new StringBuilder();

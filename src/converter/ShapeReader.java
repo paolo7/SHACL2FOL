@@ -1,6 +1,5 @@
 package converter;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -21,9 +20,9 @@ import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
-import org.eclipse.rdf4j.sail.SailConnection;
-import org.eclipse.rdf4j.sail.model.SailModel;
+import org.eclipse.rdf4j.repository.RepositoryResult;
 
+import actions.Action;
 import filters.Filter;
 import filters.FilterImpl;
 import logic.FOL_Encoder;
@@ -112,10 +111,16 @@ public class ShapeReader {
 	
 	Set<Resource> knownIRIs = new HashSet<Resource>();
 	
+	private List<Action> actions;
+	
 	public ShapeReader(RepositoryConnection conn) {
 		this(conn, null);
 	}
+	
 	public ShapeReader(RepositoryConnection conn, RepositoryConnection connData) {
+		this(conn, connData, null);
+	}
+	public ShapeReader(RepositoryConnection conn, RepositoryConnection connData, List<Action> actions) {
 		shacl_properties = new HashSet<IRI>();
 		shacl_properties.add(sh_path);
 		shacl_properties.add(sh_targetNode);
@@ -157,6 +162,8 @@ public class ShapeReader {
 		shacl_properties.add(sh_closed);
 		shacl_properties.add(sh_ignoredProperties);
 		
+		this.actions = actions;
+		
 		this.conn = conn;
 		this.connData = connData;
 		
@@ -191,20 +198,23 @@ public class ShapeReader {
 	private boolean isVAL() {
 		return mode.equals('v');
 	}
+	private boolean isASV() {
+		return mode.equals('a');
+	}
 	public void convert(FOL_Encoder encoder, char mode) {
 		this.mode = mode;
 		Set<Resource> allshapes = getShapes();
 		Set<Resource> nodeshapesOne = getNodeShapes(conn);
 		Set<Resource> propertyshapesOne = getPropertyShapes(conn);
 		Set<Resource> secondDocumentShapes = null;
-		if(isCON())
+		if(isCON() || isASV())
 			secondDocumentShapes = getShapes(connData);
 		convert_targets(allshapes,secondDocumentShapes,encoder);
 		
 		convert_constraints(nodeshapesOne, true, encoder, conn);
 		convert_constraints(propertyshapesOne, false, encoder, conn);
 		
-		if(isCON()) {
+		if(isCON() || isASV()) {
 			Set<Resource> nodeshapesTwo = getNodeShapes(connData);
 			Set<Resource> propertyshapesTwo = getPropertyShapes(connData);
 			convert_constraints(nodeshapesTwo, true, encoder, connData);
@@ -268,7 +278,11 @@ public class ShapeReader {
 	}
 	private List<Value> getRDFList(Resource r, RepositoryConnection c) {
 		Model m = new LinkedHashModel();
-		m.addAll(c.getStatements(null, null, null).asList());
+		RepositoryResult<Statement> results = c.getStatements(null, null, null);
+		while(results.hasNext()) {
+			m.add(results.next());
+		}
+		//m.addAll(c.getStatements(null, null, null).asList());
 		List<Value> collection = new LinkedList<Value>();
 		RDFCollections.asValues(m, r,collection);
 		return collection;
@@ -284,7 +298,11 @@ public class ShapeReader {
 	
 	private Value getObjectOfBlankNode(Resource r, IRI predicate, RepositoryConnection c) {
 		Model m = new LinkedHashModel();
-		m.addAll(c.getStatements(null, null, null).asList());
+		RepositoryResult<Statement> results = c.getStatements(null, null, null);
+		while(results.hasNext()) {
+			m.add(results.next());
+		}
+		//m.addAll(c.getStatements(null, null, null).asList());
 		Model matchedTriples = m.filter(r, predicate, null);
 		for (Statement st : matchedTriples) {
 			return st.getObject();
@@ -475,7 +493,7 @@ public class ShapeReader {
 			convert_subject_of_targets(s,encoder,true);
 			convert_object_of_targets(s,encoder,true);
 		}
-		if(isCON())
+		if(isCON() || isASV())
 			for(Resource s : secondDocumentShapes) {
 			convert_node_targets(s,encoder,false);
 			convert_class_targets(s,encoder,false);
@@ -508,7 +526,7 @@ public class ShapeReader {
 	
 	public Set<Resource> getShapes(){
 		Set<Resource> shapes = getShapes(conn);
-		if(isCON())
+		if(isCON() || isASV())
 			shapes.addAll(getShapes(connData));
 		return shapes;
 	}
@@ -541,7 +559,7 @@ public class ShapeReader {
 	
 	public Set<Resource> getPropertyShapes(){
 		Set<Resource> shapes = getPropertyShapes(conn);
-		if(isCON())
+		if(isCON() || isASV())
 			shapes.addAll(getPropertyShapes(connData));
 		return shapes;
 	}

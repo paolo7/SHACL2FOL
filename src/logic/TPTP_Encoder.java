@@ -14,12 +14,12 @@ import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
+import actions.Action;
 import converter.Config;
 import converter.NegativeCountForCountingQuantifierException;
 import converter.Pair;
@@ -40,6 +40,8 @@ public class TPTP_Encoder implements FOL_Encoder {
 	
 	private Map<Resource,String> data_predicates;
 
+	private List<Action> actions;
+	
 	private String tptp = "";
 	
 	public String getTptpPrefix() {
@@ -50,12 +52,17 @@ public class TPTP_Encoder implements FOL_Encoder {
 	}
 	
 	public TPTP_Encoder() {
+		this(null);
+	}
+	
+	public TPTP_Encoder(List<Action> actions) {
 		dict_constraints = new HashMap<String,String>();
 		dict_constants = new HashMap<Value,String>();
 		data_predicates = new HashMap<Resource,String>();
 		dict_constants.put(ShapeReader.rdf_type, "isA");
+		this.actions = actions;
 	}
-	
+
 	@Override
 	public String getEncodingAsString() {
 		return tptp;
@@ -130,7 +137,8 @@ public class TPTP_Encoder implements FOL_Encoder {
 		tptp += ls+"% Negated Target Axioms: ";
 		tptp += ls+getTptpPrefix()+"(axiom_"+getAxiomName()+",axiom, ";
 		if(negatedTargetAxioms.length() > 0) {
-			tptp += indent + "~ ( "+ negatedTargetAxioms+")";
+			tptp += indent + "~ ( "+ negatedTargetAxioms;
+			tptp += ls+indent + " )";
 		} else {
 			tptp += indent + "$false";
 		}
@@ -153,6 +161,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getNodeTargetAxiom(s, values);
 			tptp += ls+ indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}				
 			negatedTargetAxioms += ls + indent + getNodeTargetAxiom(s, values);
 		}
 	}
@@ -185,6 +196,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getClassTargetsAxiom(s, classes);
 			tptp += ls + indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}	
 			negatedTargetAxioms += ls + indent + getClassTargetsAxiom(s, classes);
 		}
 	}
@@ -217,6 +231,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 			tptp += getSubjectOfTargetsAxioms(s, properties, invertProperties);
 			tptp += ls+ indent + ").";
 		} else {
+			if (negatedTargetAxioms.length() > 0) {
+				negatedTargetAxioms += " &"; 
+			}	
 			negatedTargetAxioms += ls + indent + getSubjectOfTargetsAxioms(s, properties, invertProperties);
 		}
 	}

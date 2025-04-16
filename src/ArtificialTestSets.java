@@ -135,7 +135,7 @@ public class ArtificialTestSets {
 		outStream.close();
 		
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(Config.proverPath+" "+outputFile.getAbsolutePath());
+		Process pr = rt.exec(new String[] {Config.proverPath, outputFile.getAbsolutePath()});
 		InputStream consoleOutput = pr.getInputStream();
 		
 		StringBuilder textBuilder = new StringBuilder();
@@ -145,6 +145,7 @@ public class ArtificialTestSets {
         }
         String output = textBuilder.toString();
         TestOutput outResult = new TestOutput(output);
+        input.close();
         return outResult;
 	}
 	
