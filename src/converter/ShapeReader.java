@@ -1,5 +1,9 @@
 package converter;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,8 +23,14 @@ import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
+import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.RepositoryResult;
+import org.eclipse.rdf4j.repository.sail.SailRepository;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
 import filters.Filter;
@@ -99,6 +109,9 @@ public class ShapeReader {
 	private static IRI sh_qualifiedMaxCount = Values.iri(sh_prefix+"qualifiedMaxCount");
 	private static IRI sh_closed = Values.iri(sh_prefix+"closed");
 	private static IRI sh_ignoredProperties = Values.iri(sh_prefix+"ignoredProperties");
+	
+	public static String actionBeginTag = "@@ab@@->";
+	public static String actionEndTag = "<-@@ae@@";	
 	
 	private Set<IRI> shacl_properties = null;
 	
@@ -201,7 +214,7 @@ public class ShapeReader {
 	private boolean isASV() {
 		return mode.equals('a');
 	}
-	public void convert(FOL_Encoder encoder, char mode) {
+	public void convert(FOL_Encoder encoder, char mode) throws RDFParseException, RepositoryException, IOException {
 		this.mode = mode;
 		Set<Resource> allshapes = getShapes();
 		Set<Resource> nodeshapesOne = getNodeShapes(conn);
@@ -215,17 +228,27 @@ public class ShapeReader {
 		convert_constraints(propertyshapesOne, false, encoder, conn);
 		
 		if(isCON() || isASV()) {
+			if(isASV())
+				encoder.writeComment(actionBeginTag);
 			Set<Resource> nodeshapesTwo = getNodeShapes(connData);
 			Set<Resource> propertyshapesTwo = getPropertyShapes(connData);
 			convert_constraints(nodeshapesTwo, true, encoder, connData);
 			convert_constraints(propertyshapesTwo, false, encoder, connData);
+			if(isASV())
+				encoder.writeComment(actionEndTag);
 		}
 		axiomatiseFilters(encoder);
+		
+		// this needs to be done before UNA encoding as the actions might introduce new constants
+		if(isASV())
+			encoder.applyActions(actions, this);
+		
 		encodeUNA(encoder);
 		
 		if(connData != null && isVAL()) {
 			convert_data_graph(encoder);
 		}
+
 	}
 	
 	private void convert_data_graph(FOL_Encoder encoder) {
@@ -500,7 +523,11 @@ public class ShapeReader {
 			convert_subject_of_targets(s,encoder,false);
 			convert_object_of_targets(s,encoder,false);
 		}
+		if(isASV())
+			encoder.writeComment(actionBeginTag);
 		encoder.addNegatedTargetAxioms();
+		if(isASV())
+			encoder.writeComment(actionEndTag);
 	}
 	public void convert_node_targets(Resource s, FOL_Encoder encoder, boolean positive) {
 		Set<Value> nodeTargets = getAllValueObjectsOf(s,sh_targetNode, (positive ? conn : connData));
@@ -678,6 +705,26 @@ public class ShapeReader {
 			if (v.isResource())
 				resources.add((Resource) v);
 		return resources;
+	}
+	
+	private static String actionBaseURI = "https://github.com/paolo7/SHACL2FOL/mint/";
+	
+	public PropertyPath parseActionPath(String path) throws RDFParseException, RepositoryException, IOException {
+		RepositoryConnection conn = connectToStringGraph("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+				+ "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+				+ "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"
+				+ "@prefix : <"+actionBaseURI+"> .\n"
+				+ "\n"
+				+ ":shape a sh:PropertyShape ;\n"
+				+ "sh:path "+path+".\n");
+		return parsePropertyPath(Values.iri(actionBaseURI+"shape"),conn);
+	}
+	
+	private RepositoryConnection connectToStringGraph(String graph) throws RDFParseException, RepositoryException, IOException {
+		Repository repo = new SailRepository(new MemoryStore());
+		RepositoryConnection conn = repo.getConnection();
+		conn.add(new ByteArrayInputStream(graph.getBytes(StandardCharsets.UTF_8)),actionBaseURI, RDFFormat.TURTLE);
+		return conn;
 	}
 	
 }

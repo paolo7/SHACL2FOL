@@ -1,13 +1,18 @@
 package logic;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.rio.RDFParseException;
 
+import actions.Action;
 import converter.Pair;
+import converter.ShapeReader;
 import filters.Filter;
 import paths.PropertyPath;
 
@@ -65,5 +70,18 @@ public interface FOL_Encoder {
 	public void encodeDataGraph(Map<Resource, Set<Pair<Value, Value>>> dataGraph);
 
 	public void addNegatedTargetAxioms();
+	
+	/**
+	 * Generic function to inject a String into the encoding. This is meant to be used to add comments or markers to the encoding.
+	 * @param text the text to inject
+	 */
+	public void write(String text);
 
+	/**
+	 * Like the write function, but the text is added as a comment
+	 * @param text
+	 */
+	public void writeComment(String text);
+	
+	public void applyActions(List<Action> actions, ShapeReader sr) throws RDFParseException, RepositoryException, IOException;
 }

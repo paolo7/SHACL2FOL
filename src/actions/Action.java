@@ -1,5 +1,9 @@
 package actions;
 
-public interface Action {
+public abstract class Action {
 
+	public abstract boolean isAdd();
+	
+	public abstract String getLeftOperandProperty();
+	
 }

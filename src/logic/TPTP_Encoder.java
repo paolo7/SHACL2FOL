@@ -1,5 +1,6 @@
 package logic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,17 +10,26 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.management.RuntimeErrorException;
 
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
+import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
+import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
+import actions.PathAction;
+import actions.TupleAction;
 import converter.Config;
 import converter.NegativeCountForCountingQuantifierException;
 import converter.Pair;
@@ -41,8 +51,11 @@ public class TPTP_Encoder implements FOL_Encoder {
 	private Map<Resource,String> data_predicates;
 
 	private List<Action> actions;
+	private Set<Value> actionConstants;
 	
 	private String tptp = "";
+	
+	private int uniqueVarName = 0;
 	
 	public String getTptpPrefix() {
 		if(Config.encodeUNA)
@@ -61,6 +74,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 		data_predicates = new HashMap<Resource,String>();
 		dict_constants.put(ShapeReader.rdf_type, "isA");
 		this.actions = actions;
+		actionConstants = new HashSet<Value>();
 	}
 
 	@Override
@@ -89,6 +103,12 @@ public class TPTP_Encoder implements FOL_Encoder {
 			data_predicates.put((Resource) v, code);
 		}
 		return code;
+	}
+	
+	public String lookupActionIRI(String s, char p) {
+		Value v = Values.iri(s);
+		actionConstants.add(v);
+		return lookup(v,p);
 	}
 	
 	
@@ -244,9 +264,9 @@ public class TPTP_Encoder implements FOL_Encoder {
 		while (i.hasNext()) {
 			Resource p = i.next();
 			String property_s = lookup(p,'p');
-			tptp += ls+indent+"( ![X,Y] : ( "+property_s+(invertProperties ? "(Y,X)" : "(X,Y)")+" => "+shape+"(X) ) )";
+			axiom += ls+indent+"( ![X,Y] : ( "+property_s+(invertProperties ? "(Y,X)" : "(X,Y)")+" => "+shape+"(X) ) )";
 			if (i.hasNext())
-				tptp += " & ";
+				axiom += " & ";
 		}
 		return axiom;
 	}
@@ -256,6 +276,8 @@ public class TPTP_Encoder implements FOL_Encoder {
 		Set<Value> nonBlankConstants = new HashSet<Value>();
 		for(Value v : constants) if(!v.isBNode())
 			nonBlankConstants.add(v);
+		if(actions.size() > 0)
+			nonBlankConstants.addAll(actionConstants);
 		if(nonBlankConstants.size() <= 1)
 			return;
 		List<Value> orderedConstants = new ArrayList<Value>();
@@ -321,24 +343,32 @@ public class TPTP_Encoder implements FOL_Encoder {
 
 	
 	private int recursive_counter = 0;
+	private String new_recursive_paths = "";
+	
 	private String encodeRecursivePath(PropertyPath path,String firstVar, String lastVar, boolean inverted) {
 		String recursive_predicate = "rec_"+toAlphabetic(recursive_counter);
 		recursive_counter++;
+		String new_recursive_path = "";
 		
-		tptp += ls+"% Encoding of recursive path n."+recursive_counter;
-		tptp += ls+getTptpPrefix()+"(axiom_"+getAxiomName()+",axiom,";
-		tptp += ls+ indent + " ( ! [X, Y] : (";
-		tptp += ls+ indent + indent + recursive_predicate+"(X,Y) <= " + encodePath(path,"X","Y",false);
-		tptp += ls+ indent + indent + " ) )";
-		tptp += ls+ indent + " & ( ! [X, Y, Z] : (";
-		tptp += ls+ indent + indent + recursive_predicate+"(X,Z) <= " + recursive_predicate+"(X,Y) & " + encodePath(path,"Y","Z",false);
-		tptp += ls+ indent + indent + " ) )";
-		tptp += ls+ indent + " ).";
+		new_recursive_path += ls+"% Encoding of recursive path n."+recursive_counter;
+		new_recursive_path += ls+getTptpPrefix()+"(axiom_"+getAxiomName()+",axiom,";
+		new_recursive_path += ls+ indent + " ( ! [X, Y] : (";
+		new_recursive_path += ls+ indent + indent + recursive_predicate+"(X,Y) <= " + encodePath(path,"X","Y",false);
+		new_recursive_path += ls+ indent + indent + " ) )";
+		new_recursive_path += ls+ indent + " & ( ! [X, Y, Z] : (";
+		new_recursive_path += ls+ indent + indent + recursive_predicate+"(X,Z) <= " + recursive_predicate+"(X,Y) & " + encodePath(path,"Y","Z",false);
+		new_recursive_path += ls+ indent + indent + " ) )";
+		new_recursive_path += ls+ indent + " ).";
 		
+		tptp += new_recursive_path;
+		new_recursive_paths += 	new_recursive_path+ls;	
 		return recursive_predicate + ( inverted ? "("+lastVar+", "+firstVar+")" : "("+firstVar+", "+lastVar+")");
 	}
 		
 	private String encodePath(PropertyPath path,String firstVar, String lastVar, boolean inverted) {
+		return encodePath(path, firstVar, lastVar, inverted, "");
+	}
+	private String encodePath(PropertyPath path,String firstVar, String lastVar, boolean inverted, String mintVarSuffix) {
 		if(path.getType() == PathType.PREDICATE) {
 			IRI p = ((IRI_Path) path).getIRI();
 			String predicate = lookup(p,'p');
@@ -365,7 +395,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 				List<String> varNames = new LinkedList<String>();
 				varNames.add(firstVar);
 				for(int i = 0; i < list.size()-1; i++) {
-					varNames.add(firstVar+"_"+toAlphabetic(i));
+					varNames.add(firstVar+"_"+toAlphabetic(i)+mintVarSuffix);
 				}
 				varNames.add(lastVar);
 				if(varNames.size() > 2) {					
@@ -581,32 +611,6 @@ public class TPTP_Encoder implements FOL_Encoder {
 	@Override
 	public void addHasMinCountConstraint(Resource s, Value v, PropertyPath path, boolean isMax) {
 		addHasQualifiedMinCountConstraint(s,v,path,isMax,null);
-		/* String shape = lookup(s,'p');
-		int limit = ((Literal) v).integerValue().intValue();
-		if(limit == 0) {
-			if(isMax) 			
-				addConstraint(shape, FALSE);
-			else 			
-				addConstraint(shape, TRUE);
-		} else if(limit <  0){
-			throw new NegativeCountForCountingQuantifierException();
-		} else {
-			String quantification = "? [ ";
-			for(int i = 0; i < (isMax ? limit+1 : limit); i++) {
-				String varname = "X"+"_C_"+toAlphabetic(i);
-				if(i>0)
-					quantification += ", ";
-				quantification += varname;
-			}
-			quantification += " ] : ";
-			if(isMax) {
-				String constraint = countingQuantifierMin(limit+1,"X",encodePath(path,"X",varplaceholder, false));		
-				addConstraint(shape, " ~( "+quantification+"("+constraint+") )");
-			} else {
-				String constraint = countingQuantifierMin(limit,"X",encodePath(path,"X",varplaceholder, false));		
-				addConstraint(shape, quantification+"("+constraint+")");
-			}
-		} */
 	}
 
 	@Override
@@ -831,6 +835,93 @@ public class TPTP_Encoder implements FOL_Encoder {
 		
 	}
 
+	@Override
+	public void write(String text) {
+		tptp += text;
+		
+	}
+
+	@Override
+	public void writeComment(String text) {
+		write(ls + ls + "% " + text +ls);
+		
+	}
+
+	@Override
+	public void applyActions(List<Action> actions, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+		for(Action a: actions)
+			applyAction(a, sr);
+	}
+	
+	private void applyAction(Action a, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+		String predicate = lookupActionIRI(a.getLeftOperandProperty(),'p');
+		new_recursive_paths = "";
+		tptp = transformTPTP(tptp, predicate, a, sr);
+		if(new_recursive_paths.length() > 0) {
+			writeComment(sr.actionBeginTag);
+			tptp += new_recursive_paths;
+			writeComment(sr.actionEndTag);
+		}		
+	}
+	
+    public String transformTPTP(String tptpContent, String predicateName, Action a, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+        // Define the markers
+        String startMarker = "@@ab@@->";
+        String endMarker = "<-@@ae@@";
+
+        // Pattern to match the section between the markers
+        Pattern sectionPattern = Pattern.compile(
+            Pattern.quote(startMarker) + "(.*?)" + Pattern.quote(endMarker),
+            Pattern.DOTALL);
+
+        Matcher sectionMatcher = sectionPattern.matcher(tptpContent);
+        StringBuffer result = new StringBuffer();
+
+        while (sectionMatcher.find()) {
+            String section = sectionMatcher.group(1);
+
+            // Regex to match the predicate and capture its two arguments
+            String predicateRegex = "\\b" + predicateName + "\\s*\\(\\s*([^,\\s]+)\\s*,\\s*([^\\)\\s]+)\\s*\\)";
+            Pattern predicatePattern = Pattern.compile(predicateRegex);
+            Matcher predicateMatcher = predicatePattern.matcher(section);
+
+            StringBuffer transformedSection = new StringBuffer();
+            while (predicateMatcher.find()) {
+                String arg1 = predicateMatcher.group(1);
+                String arg2 = predicateMatcher.group(2);
+                String addition = getActionRightOperandTemplate(a,arg1,arg2, sr);
+                // this is 
+                // String addition = "p_new(" + arg2 + ", " + arg1 + ")";
+                String replacement = "";
+                if (a.isAdd())
+                	replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") | ("+addition+"))";
+                else
+                	replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") & ~ ("+addition+") )";
+                predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
+            }
+            predicateMatcher.appendTail(transformedSection);
+
+            // Reconstruct full section with unchanged outer markers
+            sectionMatcher.appendReplacement(result, Matcher.quoteReplacement(startMarker + transformedSection + endMarker));
+        }
+
+        sectionMatcher.appendTail(result);
+        return result.toString();
+    }
+    
+    private String getActionRightOperandTemplate(Action a, String var1, String var2, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+    	if(a instanceof TupleAction) {
+    		TupleAction action = (TupleAction) a;
+    		return var1 + " = " + lookupActionIRI(action.subject,'c') + " & " +var2+ " = " + lookupActionIRI(action.object,'c') ;
+    	} else if(a instanceof PathAction) {
+    		PathAction action = (PathAction) a;
+    		PropertyPath p = sr.parseActionPath(action.path);
+    		String pathEncoded = encodePath(p,var1, var2, false,"a"+toAlphabetic(uniqueVarName));
+    		uniqueVarName++;
+    		return pathEncoded;
+    	}
+    	throw new RuntimeException("Encountered an unknown action type");
+    }
 
 
 }

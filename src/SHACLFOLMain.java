@@ -14,7 +14,8 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
-import actions.SimpleAction;
+import actions.PathAction;
+import actions.TupleAction;
 import converter.Config;
 import converter.ShapeReader;
 import logic.FOL_Encoder;
@@ -208,14 +209,13 @@ public class SHACLFOLMain {
 		connSone.add(shapeGraphOne);
 
 		List<Action> actions = new LinkedList<Action>();
-		// A plus C
-		// A <-- C
-		// add A to C
-		// wherever there is C, add A also
-		actions.add(new SimpleAction("http://e.com/A", "http://e.com/C", true, false));
-		actions.add(new SimpleAction("http://e.com/F", "http://e.com/G", true, false));
-		// TODO remove above and parse from file
-
+		//actions.add(new TupleAction(true, "http://e.com/hasSupervisor", "http://e.com/Jane", "http://e.com/John"));
+		//actions.add(new PathAction(false, "http://e.com/hasRegion", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
+		actions.add(new PathAction(true, "http://e.com/hasFaculty", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
+		actions.add(new PathAction(true, "http://e.com/hasDepartment", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
+		actions.add(new PathAction(true, "http://e.com/hasDepartmentLead", "[ <http://www.w3.org/ns/shacl#zeroOrMorePath> <http://e.com/anotherRel> ]"));
+		actions.add(new TupleAction(true, "http://e.com/anotherRel", "http://e.com/Jane", "http://e.com/John"));
+		//actions.add(new TupleAction(false, "http://e.com/hasBuilding", "http://e.com/Jane", "http://e.com/John"));
 		File shapeGraphTwo = new File(pathToSHACLone);
 		Repository repoStwo = new SailRepository(new MemoryStore());
 		RepositoryConnection connStwo = repoStwo.getConnection();
@@ -237,7 +237,7 @@ public class SHACLFOLMain {
 				            ?shape a ?shapeType .
 				            FILTER (?shapeType IN (sh:NodeShape, sh:PropertyShape))
 				        }
-				        BIND(IRI(CONCAT(STR(?shape), "_II")) AS ?newShape)
+				        BIND(IRI(CONCAT(STR(?shape), "II")) AS ?newShape)
 				    };
 
 				    # Preserve all other triples
