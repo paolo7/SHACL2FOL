@@ -6,6 +6,7 @@ public class TupleAction extends Action {
 	public String subject;
 	public String object;
 	public boolean isAdd;
+
 	
 	public TupleAction(boolean isAdd, String predicate, String subject, String object) {
 		this.predicate = predicate;

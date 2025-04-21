@@ -851,8 +851,16 @@ public class TPTP_Encoder implements FOL_Encoder {
 
 	@Override
 	public void applyActions(List<Action> actions, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
-		for(Action a: actions)
+		// apply actions in the reverse order
+		List<Action> reversed = new ArrayList<>(actions); 
+		Collections.reverse(reversed);
+		
+		for(Action a: reversed) {
+			a.setHasBeenDefined(false);
 			applyAction(a, sr);
+			a.setHasBeenDefined(false);
+		}
+
 	}
 	
 	private void applyAction(Action a, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
@@ -933,8 +941,13 @@ public class TPTP_Encoder implements FOL_Encoder {
     		return pathEncoded;
     	} else if(a instanceof ShapeAction) {
     		ShapeAction action = (ShapeAction) a;
-    		IRI shapeIRI = encodeShapeAction(action,sr);
-    		String shapePredicate = lookup(shapeIRI,'s');
+    		String shapePredicate = action.shapePredicate;
+    		if(!action.hasBeenDefined()) {
+        		IRI shapeIRI = encodeShapeAction(action,sr);
+        		shapePredicate = lookup(shapeIRI,'s');
+        		action.shapePredicate = shapePredicate;
+        		action.setHasBeenDefined(true);
+    		}
     		if(action.isSubject)
     			return shapePredicate+"("+var2+")";
     		else

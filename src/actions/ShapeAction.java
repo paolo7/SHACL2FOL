@@ -7,6 +7,7 @@ public class ShapeAction extends Action{
 	public String constant;
 	public boolean isSubject;
 	public boolean isAdd;
+	public String shapePredicate;
 	
 	/**
 	 * 
