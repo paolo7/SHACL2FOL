@@ -21,4 +21,14 @@ public class PathAction extends Action{
 	public String getLeftOperandProperty() {
 		return predicate;
 	}
+
+	@Override
+	public String getSubjectConstraint() {
+		return null;
+	}
+
+	@Override
+	public String getObjectConstraint() {
+		return null;
+	}
 }

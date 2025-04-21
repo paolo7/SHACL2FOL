@@ -15,6 +15,7 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
 import actions.PathAction;
+import actions.ShapeAction;
 import actions.TupleAction;
 import converter.Config;
 import converter.ShapeReader;
@@ -211,10 +212,33 @@ public class SHACLFOLMain {
 		List<Action> actions = new LinkedList<Action>();
 		//actions.add(new TupleAction(true, "http://e.com/hasSupervisor", "http://e.com/Jane", "http://e.com/John"));
 		//actions.add(new PathAction(false, "http://e.com/hasRegion", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		actions.add(new PathAction(true, "http://e.com/hasFaculty", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		actions.add(new PathAction(true, "http://e.com/hasDepartment", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		actions.add(new PathAction(true, "http://e.com/hasDepartmentLead", "[ <http://www.w3.org/ns/shacl#zeroOrMorePath> <http://e.com/anotherRel> ]"));
-		actions.add(new TupleAction(true, "http://e.com/anotherRel", "http://e.com/Jane", "http://e.com/John"));
+		//actions.add(new PathAction(true, "http://e.com/hasFaculty", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
+		String shapeactionOne = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+				+ "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+				+ "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"
+				+ "@prefix : <http://e.com/> .\n"
+				+ "\n"
+				+ ":shapeGGGG a sh:NodeShape ;\n"
+				+ "  sh:and (\n"
+				+ "	[ sh:path (:hasSupervisor :hasFaculty) ;\n"
+				+ "         sh:minCount 1 ]\n"
+				+ "        [ sh:path (:hasFaculty) ;\n"
+				+ "         sh:minCount 1 ]\n"
+				+ "  ).";
+		String shapeactionTwo = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
+				+ "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+				+ "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"
+				+ "@prefix : <http://e.com/> .\n"
+				+ "\n"
+				+ ":shapeGGGG a sh:PropertyShape ;\n"
+				+ "  sh:path :newpath ;\n"
+				+ "         sh:minCount 1 .\n";
+		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
+		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/B", false, shapeactionTwo));
+		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
+		//actions.add(new PathAction(true, "http://e.com/hasDepartment", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
+		//actions.add(new PathAction(true, "http://e.com/hasDepartmentLead", "[ <http://www.w3.org/ns/shacl#zeroOrMorePath> <http://e.com/anotherRel> ]"));
+		//actions.add(new TupleAction(true, "http://e.com/anotherRel", "http://e.com/Jane", "http://e.com/John"));
 		//actions.add(new TupleAction(false, "http://e.com/hasBuilding", "http://e.com/Jane", "http://e.com/John"));
 		File shapeGraphTwo = new File(pathToSHACLone);
 		Repository repoStwo = new SailRepository(new MemoryStore());

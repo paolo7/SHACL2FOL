@@ -8,6 +8,7 @@ public class TestActions {
 	public static void main(String[] args) throws RDFParseException, UnsupportedRDFormatException, IOException {
 		
 		String[] parameters = new String[]{"a","./M1.ttl","./actions.ttl"};
+		//String[] parameters = new String[]{"a","./StudentShapesAlt.ttl","./actions.ttl"};		
 		SHACLFOLMain.main(parameters);
 		
 	}

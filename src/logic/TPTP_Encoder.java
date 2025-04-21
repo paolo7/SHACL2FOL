@@ -29,6 +29,7 @@ import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
 import actions.PathAction;
+import actions.ShapeAction;
 import actions.TupleAction;
 import converter.Config;
 import converter.NegativeCountForCountingQuantifierException;
@@ -344,6 +345,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 	
 	private int recursive_counter = 0;
 	private String new_recursive_paths = "";
+	private String new_action_shapes = "";
 	
 	private String encodeRecursivePath(PropertyPath path,String firstVar, String lastVar, boolean inverted) {
 		String recursive_predicate = "rec_"+toAlphabetic(recursive_counter);
@@ -861,6 +863,11 @@ public class TPTP_Encoder implements FOL_Encoder {
 			writeComment(sr.actionBeginTag);
 			tptp += new_recursive_paths;
 			writeComment(sr.actionEndTag);
+		}	
+		if(new_action_shapes.length() > 0) {
+			writeComment(sr.actionBeginTag);
+			tptp += new_action_shapes;
+			writeComment(sr.actionEndTag);
 		}		
 	}
 	
@@ -876,7 +883,8 @@ public class TPTP_Encoder implements FOL_Encoder {
 
         Matcher sectionMatcher = sectionPattern.matcher(tptpContent);
         StringBuffer result = new StringBuffer();
-
+        String subjectConstant = a.getSubjectConstraint() == null ? null : lookupActionIRI(a.getSubjectConstraint(),'c');
+        String objectConstant = a.getObjectConstraint() == null ? null : lookupActionIRI(a.getObjectConstraint(),'c');
         while (sectionMatcher.find()) {
             String section = sectionMatcher.group(1);
 
@@ -888,7 +896,11 @@ public class TPTP_Encoder implements FOL_Encoder {
             StringBuffer transformedSection = new StringBuffer();
             while (predicateMatcher.find()) {
                 String arg1 = predicateMatcher.group(1);
+                if(subjectConstant != null && ! subjectConstant.equals(arg1))
+                	continue;
                 String arg2 = predicateMatcher.group(2);
+                if(objectConstant != null && ! objectConstant.equals(arg2))
+                	continue;
                 String addition = getActionRightOperandTemplate(a,arg1,arg2, sr);
                 // this is 
                 // String addition = "p_new(" + arg2 + ", " + arg1 + ")";
@@ -919,8 +931,23 @@ public class TPTP_Encoder implements FOL_Encoder {
     		String pathEncoded = encodePath(p,var1, var2, false,"a"+toAlphabetic(uniqueVarName));
     		uniqueVarName++;
     		return pathEncoded;
+    	} else if(a instanceof ShapeAction) {
+    		ShapeAction action = (ShapeAction) a;
+    		IRI shapeIRI = encodeShapeAction(action,sr);
+    		String shapePredicate = lookup(shapeIRI,'s');
+    		if(action.isSubject)
+    			return shapePredicate+"("+var2+")";
+    		else
+    			return shapePredicate+"("+var1+")";
     	}
     	throw new RuntimeException("Encountered an unknown action type");
+    }
+    
+    private IRI encodeShapeAction(ShapeAction action, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+		tptp = "";    	
+		IRI shapeIRI = sr.parseActionShape(action.shape,this);
+		new_action_shapes = tptp;
+    	return shapeIRI;
     }
 
 

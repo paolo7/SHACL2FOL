@@ -24,4 +24,14 @@ public class TupleAction extends Action {
 		return predicate;
 	}
 
+	@Override
+	public String getSubjectConstraint() {
+		return null;
+	}
+
+	@Override
+	public String getObjectConstraint() {
+		return null;
+	}
+
 }

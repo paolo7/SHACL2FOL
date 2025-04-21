@@ -4,20 +4,26 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.util.RDFCollections;
 import org.eclipse.rdf4j.model.util.Values;
 import org.eclipse.rdf4j.query.BindingSet;
@@ -134,6 +140,8 @@ public class ShapeReader {
 		this(conn, connData, null);
 	}
 	public ShapeReader(RepositoryConnection conn, RepositoryConnection connData, List<Action> actions) {
+		//replaceBlankNodesInRepository(conn);
+		//replaceBlankNodesInRepository(connData);
 		shacl_properties = new HashSet<IRI>();
 		shacl_properties.add(sh_path);
 		shacl_properties.add(sh_targetNode);
@@ -214,6 +222,63 @@ public class ShapeReader {
 	private boolean isASV() {
 		return mode.equals('a');
 	}
+	
+	
+	
+	
+
+    private static final String BASE_IRI_BLANK_NODE_SHAPE = "https://github.com/paolo7/SHACL2FOL/bnodeToIRI/";
+    private static final ValueFactory vf = SimpleValueFactory.getInstance();
+
+
+    /**
+     * Replaces all blank nodes in all graphs in the repository with freshly minted IRIs.
+     * Modifies the data in-place (original statements are removed, replaced with updated ones).
+     *
+     * @param conn the RepositoryConnection to modify
+     */
+    public static void replaceBlankNodesInRepository(RepositoryConnection conn) {
+        // Get all statements (including contexts)
+        List<Statement> allStatements = new ArrayList<>();
+        conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
+
+        // Map to track replacements for blank nodes
+        Map<BNode, IRI> bNodeMap = new HashMap<>();
+
+        // Prepare transformed statements
+        List<Statement> newStatements = new ArrayList<>();
+
+        for (Statement st : allStatements) {
+            Resource subject = st.getSubject();
+            Value object = st.getObject();
+            IRI predicate = st.getPredicate();
+            Resource context = st.getContext();
+
+            // Replace subject if it's a blank node
+            if (subject instanceof BNode) {
+                subject = bNodeMap.computeIfAbsent((BNode) subject,
+                        b -> vf.createIRI(BASE_IRI_BLANK_NODE_SHAPE + UUID.randomUUID()));
+            }
+
+            // Replace object if it's a blank node
+            if (object instanceof BNode) {
+                object = bNodeMap.computeIfAbsent((BNode) object,
+                        b -> vf.createIRI(BASE_IRI_BLANK_NODE_SHAPE + UUID.randomUUID()));
+            }
+
+            newStatements.add(vf.createStatement(subject, predicate, object, context));
+        }
+
+        // Remove original statements
+        conn.clear(); // optional: clears everything, including named graphs
+
+        // Add updated statements
+        conn.add(newStatements);
+    }
+    
+    
+    
+    
 	public void convert(FOL_Encoder encoder, char mode) throws RDFParseException, RepositoryException, IOException {
 		this.mode = mode;
 		Set<Resource> allshapes = getShapes();
@@ -718,6 +783,64 @@ public class ShapeReader {
 				+ ":shape a sh:PropertyShape ;\n"
 				+ "sh:path "+path+".\n");
 		return parsePropertyPath(Values.iri(actionBaseURI+"shape"),conn);
+	}
+	
+	private static String actionShapeBaseURI = "https://github.com/paolo7/SHACL2FOL/mint_a/ac_sh";
+	private static int actionShapeBaseURIiterator = 0;
+	
+	public static void replaceIriInAllTriples(RepositoryConnection conn, IRI oldIri, IRI newIri) {
+        List<Statement> updatedStatements = new ArrayList<>();
+        SimpleValueFactory vf = SimpleValueFactory.getInstance();
+
+        try (var iter = conn.getStatements(null, null, null, false)) {
+            while (iter.hasNext()) {
+                Statement st = iter.next();
+
+                Value subj = st.getSubject().equals(oldIri) ? newIri : st.getSubject();
+                Value pred = st.getPredicate().equals(oldIri) ? newIri : st.getPredicate();
+                Value obj = st.getObject().equals(oldIri) ? newIri : st.getObject();
+
+                Statement updated = vf.createStatement(
+                    (org.eclipse.rdf4j.model.Resource) subj,
+                    (IRI) pred,
+                    obj,
+                    st.getContext()
+                );
+
+                updatedStatements.add(updated);
+            }
+        }
+
+        // Clear existing statements
+        conn.clear();
+
+        // Add updated statements
+        conn.add(updatedStatements);
+    }
+	
+	public IRI parseActionShape(String shape, FOL_Encoder encoder) throws RDFParseException, RepositoryException, IOException {
+		RepositoryConnection conn = connectToStringGraph(shape);
+		Set<Resource> nodeShapes = getNodeShapes(conn);
+		Set<Resource> propertyShapes = getPropertyShapes(conn);
+		Set<Resource> namedShapes = new HashSet<Resource>();
+		for(Resource r: nodeShapes)
+			if(r.isIRI())
+				namedShapes.add(r);
+		for(Resource r: propertyShapes)
+			if(r.isIRI())
+				namedShapes.add(r);
+		if(namedShapes.size() != 1)
+			throw new IOException("This shape is used as part of an action, but it does not meet the requirement of consisting of a single shape definition:\n"+shape);
+		//String mainShape = namedShapes.iterator().next().stringValue();
+		replaceBlankNodesInRepository(conn);
+		actionShapeBaseURIiterator += 1;
+		IRI newIRIforShape = Values.iri(actionShapeBaseURI+actionShapeBaseURIiterator);
+		replaceIriInAllTriples(conn, (IRI) namedShapes.iterator().next(), newIRIforShape);
+		nodeShapes = getNodeShapes(conn);
+		propertyShapes = getPropertyShapes(conn);
+		convert_constraints(nodeShapes, true, encoder, conn);
+		convert_constraints(propertyShapes, false, encoder, conn);
+		return newIRIforShape;
 	}
 	
 	private RepositoryConnection connectToStringGraph(String graph) throws RDFParseException, RepositoryException, IOException {

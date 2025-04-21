@@ -6,4 +6,8 @@ public abstract class Action {
 	
 	public abstract String getLeftOperandProperty();
 	
+	public abstract String getSubjectConstraint();
+	
+	public abstract String getObjectConstraint();
+	
 }
