@@ -26,6 +26,7 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.model.util.RDFCollections;
 import org.eclipse.rdf4j.model.util.Values;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.TupleQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
@@ -140,8 +141,8 @@ public class ShapeReader {
 		this(conn, connData, null);
 	}
 	public ShapeReader(RepositoryConnection conn, RepositoryConnection connData, List<Action> actions) {
-		//replaceBlankNodesInRepository(conn);
-		//replaceBlankNodesInRepository(connData);
+		replaceBlankNodesInRepository(conn);
+		replaceBlankNodesInRepository(connData);
 		shacl_properties = new HashSet<IRI>();
 		shacl_properties.add(sh_path);
 		shacl_properties.add(sh_targetNode);
@@ -238,6 +239,105 @@ public class ShapeReader {
      * @param conn the RepositoryConnection to modify
      */
     public static void replaceBlankNodesInRepository(RepositoryConnection conn) {
+        // Load all statements
+        List<Statement> allStatements = new ArrayList<>();
+        conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
+
+        // SHACL-related IRIs
+        IRI NODE_SHAPE = vf.createIRI("http://www.w3.org/ns/shacl#NodeShape");
+        IRI PROPERTY_SHAPE = vf.createIRI("http://www.w3.org/ns/shacl#PropertyShape");
+
+        // List of SHACL core constraint component predicates
+        Set<IRI> shaclConstraintPredicates = Set.of(
+        	    vf.createIRI("http://www.w3.org/ns/shacl#class"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#datatype"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#nodeKind"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#minCount"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#maxCount"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#minExclusive"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#minInclusive"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#maxExclusive"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#maxInclusive"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#minLength"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#maxLength"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#pattern"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#flags"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#languageIn"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#uniqueLang"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#equals"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#disjoint"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#lessThan"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#lessThanOrEquals"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#not"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#and"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#xone"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#or"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#node"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#property"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#qualifiedValueShape"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#qualifiedMinCount"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#qualifiedMaxCount"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#qualifiedValueShapesDisjoint"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#closed"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#ignoredProperties"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#hasValue"),
+        	    vf.createIRI("http://www.w3.org/ns/shacl#in"),     	    
+        	    vf.createIRI("http://www.w3.org/ns/shacl#value")
+        	);
+
+        // Identify blank nodes to replace
+        Set<BNode> bNodesToReplace = new HashSet<>();
+
+        for (Statement st : allStatements) {
+            Resource subj = st.getSubject();
+            IRI pred = st.getPredicate();
+            Value obj = st.getObject();
+
+            // Case 1: subject is a blank node that is declared as NodeShape or PropertyShape
+            if (subj instanceof BNode && pred.equals(RDF.TYPE)
+                    && (obj.equals(NODE_SHAPE) || obj.equals(PROPERTY_SHAPE))) {
+                bNodesToReplace.add((BNode) subj);
+            }
+
+            // Case 2: subject is a blank node used in a SHACL constraint component
+            if (subj instanceof BNode && shaclConstraintPredicates.contains(pred)) {
+                bNodesToReplace.add((BNode) subj);
+            }
+        }
+
+        // Map for replacement
+        Map<BNode, IRI> bNodeMap = new HashMap<>();
+
+        List<Statement> newStatements = new ArrayList<>();
+
+        for (Statement st : allStatements) {
+            Resource subj = st.getSubject();
+            IRI pred = st.getPredicate();
+            Value obj = st.getObject();
+            Resource context = st.getContext();
+
+            // Replace subject if it's a tracked blank node
+            if (subj instanceof BNode && bNodesToReplace.contains(subj)) {
+                subj = bNodeMap.computeIfAbsent((BNode) subj,
+                        b -> vf.createIRI(BASE_IRI_BLANK_NODE_SHAPE + UUID.randomUUID()));
+            }
+
+            // Replace object if it's a tracked blank node
+            if (obj instanceof BNode && bNodesToReplace.contains(obj)) {
+                obj = bNodeMap.computeIfAbsent((BNode) obj,
+                        b -> vf.createIRI(BASE_IRI_BLANK_NODE_SHAPE + UUID.randomUUID()));
+            }
+
+            newStatements.add(vf.createStatement(subj, pred, obj, context));
+        }
+
+        // Optional: clear original data
+        conn.clear();
+
+        // Add updated statements
+        conn.add(newStatements);
+    }
+    /*public static void replaceBlankNodesInRepository(RepositoryConnection conn) {
         // Get all statements (including contexts)
         List<Statement> allStatements = new ArrayList<>();
         conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
@@ -274,7 +374,7 @@ public class ShapeReader {
 
         // Add updated statements
         conn.add(newStatements);
-    }
+    }*/
     
     
     
