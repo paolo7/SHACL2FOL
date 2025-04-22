@@ -236,7 +236,7 @@ public class SHACLFOLMain {
 				+ "  sh:class :B .\n";
 
 		//A minus B, whenever I find B, I remove A
-		actions.add(new ShapeAction(false, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
+		//actions.add(new ShapeAction(false, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
 		
 		//A plus B (whenever I find B, I add A
 		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));

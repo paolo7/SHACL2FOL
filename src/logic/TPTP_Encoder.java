@@ -904,20 +904,33 @@ public class TPTP_Encoder implements FOL_Encoder {
             StringBuffer transformedSection = new StringBuffer();
             while (predicateMatcher.find()) {
                 String arg1 = predicateMatcher.group(1);
-                if(subjectConstant != null && ! subjectConstant.equals(arg1))
-                	continue;
+                //if(subjectConstant != null && ! subjectConstant.equals(arg1))
+                //	continue;
                 String arg2 = predicateMatcher.group(2);
-                if(objectConstant != null && ! objectConstant.equals(arg2))
-                	continue;
+                //if(objectConstant != null && ! objectConstant.equals(arg2))
+                //	continue;
                 String addition = getActionRightOperandTemplate(a,arg1,arg2, sr);
                 // this is 
                 // String addition = "p_new(" + arg2 + ", " + arg1 + ")";
                 String replacement = "";
-                if (a.isAdd())
-                	replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") | ("+addition+"))";
-                else
-                	replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") & ~ ("+addition+") )";
-                predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
+                if(subjectConstant != null && objectConstant != null) {
+                	if (a.isAdd())
+                		replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") | ("+addition+"))";
+                	else
+                		replacement = "(" + predicateName + "(" + arg1 + ", " + arg2 + ") & ~ ("+addition+") )";
+                	predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
+                } else {
+                	String variableMatchedWithConstant = subjectConstant != null ? arg1 : arg2;
+                	String constantToMatch = subjectConstant != null ? subjectConstant : objectConstant;
+                	replacement = "( ("+variableMatchedWithConstant + " != " + constantToMatch+" & "+ predicateName + "(" + arg1 + ", " + arg2 + ") ) | "
+                			+ "( "+variableMatchedWithConstant + " = " + constantToMatch+" & ";
+                	if (a.isAdd())
+                		replacement += "(" + predicateName + "(" + arg1 + ", " + arg2 + ") | ("+addition+"))";
+                	else
+                		replacement += "(" + predicateName + "(" + arg1 + ", " + arg2 + ") & ~ ("+addition+") )";
+                	replacement += ") ) ";
+                	predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
+                }
             }
             predicateMatcher.appendTail(transformedSection);
 
