@@ -239,6 +239,8 @@ public class ShapeReader {
      * @param conn the RepositoryConnection to modify
      */
     public static void replaceBlankNodesInRepository(RepositoryConnection conn) {
+    	if(conn == null)
+    		return;
         // Load all statements
         List<Statement> allStatements = new ArrayList<>();
         conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
@@ -690,7 +692,8 @@ public class ShapeReader {
 		}
 		if(isASV())
 			encoder.writeComment(actionBeginTag);
-		encoder.addNegatedTargetAxioms();
+		if(isCON() || isASV())
+			encoder.addNegatedTargetAxioms();
 		if(isASV())
 			encoder.writeComment(actionEndTag);
 	}

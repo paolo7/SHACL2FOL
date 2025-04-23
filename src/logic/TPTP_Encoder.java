@@ -277,7 +277,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 		Set<Value> nonBlankConstants = new HashSet<Value>();
 		for(Value v : constants) if(!v.isBNode())
 			nonBlankConstants.add(v);
-		if(actions.size() > 0)
+		if(actions != null && actions.size() > 0)
 			nonBlankConstants.addAll(actionConstants);
 		if(nonBlankConstants.size() <= 1)
 			return;

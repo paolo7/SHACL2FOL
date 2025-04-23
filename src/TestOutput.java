@@ -25,6 +25,10 @@ public class TestOutput {
 			satComputed = true;
 		return satComputed;
 	}
+	
+	public Boolean hasFiniteModelBeenFound() {
+		return this.testOutput.contains("Finite Model Found");
+	}
 
 	public Boolean isSatisfiable() {
 		if (sat != null)

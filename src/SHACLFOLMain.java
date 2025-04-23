@@ -28,7 +28,9 @@ public class SHACLFOLMain {
 		Config.readDefaultConfig();
 		String outputFilename = Config.tptpOutputFile;
 		String proverCommand = Config.proverPath;
-
+		String proverArguments = Config.proverArguments;
+		if(proverArguments.length()>0)
+			proverCommand += " "+proverArguments;
 		// testSAT("/home/office/SHACL2FOL/SHACL2FOL/shapes/test.ttl",outputFilename,proverCommand);
 
 		System.out.println("Default prover command " + proverCommand);
@@ -90,7 +92,8 @@ public class SHACLFOLMain {
 		outStream.close();
 
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		//Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
 		InputStream consoleOutput = pr.getInputStream();
 
 		StringBuilder textBuilder = new StringBuilder();
@@ -102,6 +105,10 @@ public class SHACLFOLMain {
 		TestOutput outResult = new TestOutput(output);
 		// System.out.println(output);
 		System.out.println("Is satisfiable? " + outResult.isSatisfiable());
+		if(outResult.isSatisfiable()) {
+			System.out.println(outResult.hasFiniteModelBeenFound() ? "A finite satisfiable model has been found." : "A satisfiable model has been found, but it might not be finite.");
+		} else
+			System.out.println("No model has been found.");
 		System.out.println("Memory (KB) " + outResult.getMemoryUsedKB());
 		System.out.println("Time (s) " + outResult.getTimeElapsedSeconds());
 		return outResult.isSatisfiable();
@@ -133,7 +140,8 @@ public class SHACLFOLMain {
 		outStream.close();
 
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		//Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
 		InputStream consoleOutput = pr.getInputStream();
 
 		StringBuilder textBuilder = new StringBuilder();
@@ -145,6 +153,10 @@ public class SHACLFOLMain {
 		TestOutput outResult = new TestOutput(output);
 		// System.out.println(output);
 		System.out.println("Is data graph valid? " + outResult.isSatisfiable());
+		if(outResult.isSatisfiable()) {
+			System.out.println(outResult.hasFiniteModelBeenFound() ? "A finite satisfiable model has been found." : "A satisfiable model has been found, but it might not be finite");
+		} else
+			System.out.println("No model has been found.");
 		System.out.println("Memory (KB) " + outResult.getMemoryUsedKB());
 		System.out.println("Time (s) " + outResult.getTimeElapsedSeconds());
 
@@ -179,7 +191,8 @@ public class SHACLFOLMain {
 		outStream.close();
 
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
+		//Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
 		InputStream consoleOutput = pr.getInputStream();
 
 		StringBuilder textBuilder = new StringBuilder();
@@ -192,9 +205,9 @@ public class SHACLFOLMain {
 		// System.out.println(output);
 		System.out.println("Is the first shape graph contained in the second? " + (!outResult.isSatisfiable()));
 		if (!outResult.isSatisfiable())
-			System.out.println("Whenever a data graph is validated by the first, it is also validated by the second.");
+			System.out.println("Whenever a data graph is validated by the first, it is also validated by the second (no model has been found).");
 		else
-			System.out.println("There exists a data graph validated by the first but not by the second.");
+			System.out.println("There exists a "+(outResult.hasFiniteModelBeenFound() ? "FINITE " : "")+"data graph validated by the first but not by the second.");
 		System.out.println("Memory (KB) " + outResult.getMemoryUsedKB());
 		System.out.println("Time (s) " + outResult.getTimeElapsedSeconds());
 
@@ -236,7 +249,7 @@ public class SHACLFOLMain {
 				+ "  sh:class :B .\n";
 
 		//A minus B, whenever I find B, I remove A
-		//actions.add(new ShapeAction(false, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
+		actions.add(new ShapeAction(false, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
 		
 		//A plus B (whenever I find B, I add A
 		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
@@ -302,7 +315,12 @@ public class SHACLFOLMain {
 		outStream.close();
 
 		Runtime rt = Runtime.getRuntime();
-		Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
+		// sat --sat_solver fmf input_file.p
+		//--finite_model_find on --smt_min_domain_size 1 --smt_max_domain_size 10
+		String[] a = (proverCommand+" "+pathToTPTP).split(" ");
+		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
+		//Process pr = rt.exec(new String[] { proverCommand, "--saturation_algorithm","fmb", pathToTPTP });
+		//Process pr = rt.exec(new String[] { proverCommand, pathToTPTP });
 		InputStream consoleOutput = pr.getInputStream();
 
 		StringBuilder textBuilder = new StringBuilder();
@@ -313,11 +331,12 @@ public class SHACLFOLMain {
 		String output = textBuilder.toString();
 		TestOutput outResult = new TestOutput(output);
 		// System.out.println(output);
-		System.out.println("Is the first shape graph contained in the second? " + (!outResult.isSatisfiable()));
-		if (!outResult.isSatisfiable())
-			System.out.println("Whenever a data graph is validated by the first, it is also validated by the second.");
+		System.out.println("Is validation of the shape graph maintained after performing the actions? " + (!outResult.isSatisfiable()));
+		if (!outResult.isSatisfiable()) {
+			System.out.println("Whenever a valid data graph is subject to the actions, validity is maintained (no model has been found).");
+			}
 		else
-			System.out.println("There exists a data graph validated by the first but not by the second.");
+			System.out.println("There exists a "+(outResult.hasFiniteModelBeenFound() ? "FINITE " : "")+"valid data graph that, after the actions are performed, becomes invalid.");
 		System.out.println("Memory (KB) " + outResult.getMemoryUsedKB());
 		System.out.println("Time (s) " + outResult.getTimeElapsedSeconds());
 

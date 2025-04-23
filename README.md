@@ -15,8 +15,9 @@ The outputs of this tool are two:
 
 ## Installation
 
-1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ .
+1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ (you can get the latest release here https://github.com/vprover/vampire/releases , it was tested on Vampire 4.9).
 2. Configure the config.properties file with the path to the theorem prover executable .
+3. Make sure the theorem prover executable file has permission to be executed .
 3. Run the SHACL2FOL.jar jar file with the following arguments:
 
 To perform a satisfiability check:
@@ -33,6 +34,12 @@ To perform a validity check:
 * arg[1] the path to the shape graph
 * arg[2] the path to the data graph
 
+To check for the final model property, configure the arguments of the prover command accordingly using the `proverArguments` property in `config.properties`.
+For example, to look for final models in Vampire 4.9 this property can be set to: 
+
+```
+proverArguments=--saturation_algorithm fmb
+```
 
 ## Using a TPTP file with the E theorem prover
 

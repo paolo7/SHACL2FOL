@@ -15,6 +15,7 @@ public class Config {
 	public static String graphFile = null;
 	public static String tptpOutputFile = null;
 	public static String proverPath = "./vampire";
+	public static String proverArguments = "";
 	
 	public static void readDefaultConfig() throws IOException{
 	InputStream input = new FileInputStream("config.properties");
@@ -33,6 +34,9 @@ public class Config {
     	tptpOutputFile = prop.getProperty("tptpOutputFile");
     if(prop.containsKey("proverPath")) {
     	proverPath = prop.getProperty("proverPath");  	
+    }
+    if(prop.containsKey("proverArguments")) {
+    	proverArguments = prop.getProperty("proverArguments");  	
     }
     
 	}
