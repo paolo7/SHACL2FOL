@@ -1,12 +1,16 @@
 package actions;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PathAction extends Action{
 
 	public String predicate;
 	public String path;
 	public boolean isAdd;
 	
-	public PathAction(boolean isAdd, String predicate, String path) {
+	@JsonCreator
+	public PathAction(@JsonProperty("isAdd") boolean isAdd, @JsonProperty("predicate") String predicate, @JsonProperty("path") String path) {
 		this.predicate = predicate;
 		this.path = path;
 		this.isAdd = isAdd;
@@ -22,13 +26,4 @@ public class PathAction extends Action{
 		return predicate;
 	}
 
-	@Override
-	public String getSubjectConstraint() {
-		return null;
-	}
-
-	@Override
-	public String getObjectConstraint() {
-		return null;
-	}
 }

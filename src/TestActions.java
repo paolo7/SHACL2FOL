@@ -1,13 +1,7 @@
-import java.io.IOException;
-
-import org.eclipse.rdf4j.repository.RepositoryException;
-import org.eclipse.rdf4j.rio.RDFParseException;
-import org.eclipse.rdf4j.rio.UnsupportedRDFormatException;
-
 public class TestActions {
 
 	
-	public static void main(String[] args) throws RDFParseException, UnsupportedRDFormatException, IOException {
+	public static void main(String[] args) throws Exception {
 		
 		// test sat
 		runCommand(new String[]{"s","./M1.ttl"});
@@ -20,7 +14,7 @@ public class TestActions {
 		// test cont 2
 		runCommand(new String[]{"c","./M1.ttl","./M2.ttl"});
 		// test actions
-		runCommand(new String[]{"a","./M1.ttl","./actions.ttl"});
+		runCommand(new String[]{"a","./M1.ttl","./actions1.json"});
 		//String[] parameters = new String[]{"a","./M1.ttl","./actions.ttl"};
 		
 		//String[] parameters = new String[]{"a","./StudentShapesAlt.ttl","./actions.ttl"};		
@@ -28,7 +22,7 @@ public class TestActions {
 		
 	}
 	
-	private static void runCommand(String[] args) throws RDFParseException, RepositoryException, IOException {
+	private static void runCommand(String[] args) throws Exception {
 		SHACLFOLMain.main(args);
 		System.out.println();
 	}

@@ -1,5 +1,8 @@
 package actions;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class TupleAction extends Action {
 	
 	public String predicate;
@@ -7,8 +10,8 @@ public class TupleAction extends Action {
 	public String object;
 	public boolean isAdd;
 
-	
-	public TupleAction(boolean isAdd, String predicate, String subject, String object) {
+	@JsonCreator
+	public TupleAction( @JsonProperty("isAdd") boolean isAdd, @JsonProperty("predicate") String predicate, @JsonProperty("subject") String subject, @JsonProperty("object") String object) {
 		this.predicate = predicate;
 		this.subject = subject;
 		this.object = object;
@@ -23,16 +26,6 @@ public class TupleAction extends Action {
 	@Override
 	public String getLeftOperandProperty() {
 		return predicate;
-	}
-
-	@Override
-	public String getSubjectConstraint() {
-		return null;
-	}
-
-	@Override
-	public String getObjectConstraint() {
-		return null;
 	}
 
 }

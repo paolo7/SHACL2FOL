@@ -1,0 +1,30 @@
+[
+
+{
+    "type": "PathAction",
+    "isAdd": true,
+    "predicate": "http:\/\/e.com\/hasFaculty",
+    "path": "( <http:\/\/e.com\/hasDepartment> <http:\/\/e.com\/hasDepartmentLead> )"
+  },
+{
+    "type": "ShapeAction",
+    "isAdd": false,
+    "predicate": "http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#type",
+    "subjectShape": "@prefix rdf: <http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#> .\r\n@prefix rdfs: <http:\/\/www.w3.org\/2000\/01\/rdf-schema#> .\r\n@prefix sh: <http:\/\/www.w3.org\/ns\/shacl#> .\r\n@prefix : <http:\/\/e.com\/> .\r\n\r\n:shapeGGGG a sh:NodeShape ;\r\n  sh:and (\r\n\t[ sh:path [ sh:zeroOrMorePath rdfs:subClassOf ] ;\r\n         sh:minCount 1 ]\r\n        [ sh:path (:hasFaculty) ;\r\n         sh:minCount 1 ]\r\n  ).", 
+    "objectShape": "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\\n@prefix sh: <http://www.w3.org/ns/shacl#> .\\n@prefix : <http://e.com/> .\\n:shapeA a sh:NodeShape ;\\n  sh:hasValue :A ."
+  },
+  {
+    "type": "ShapeAction",
+    "isAdd": true,
+    "predicate": "http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#type",
+    "subjectShape": "@prefix rdf: <http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#> .\r\n@prefix rdfs: <http:\/\/www.w3.org\/2000\/01\/rdf-schema#> .\r\n@prefix sh: <http:\/\/www.w3.org\/ns\/shacl#> .\r\n@prefix : <http:\/\/e.com\/> .\r\n\r\n:shapeGGGG a sh:PropertyShape ;\r\n  sh:class :B .\r\n",
+    "objectShape": "@prefix rdf: <http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#> .\r\n@prefix rdfs: <http:\/\/www.w3.org\/2000\/01\/rdf-schema#> .\r\n@prefix sh: <http:\/\/www.w3.org\/ns\/shacl#> .\r\n@prefix : <http:\/\/e.com\/> .\r\n\r\n:shapeGGGG a sh:NodeShape ;\r\n  sh:hasValue :A .\r\n"
+  },
+  {
+    "type": "ShapeAction",
+    "isAdd": false,
+    "predicate": "http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#type",
+    "subjectShape": "@prefix rdf: <http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#> .\r\n@prefix rdfs: <http:\/\/www.w3.org\/2000\/01\/rdf-schema#> .\r\n@prefix sh: <http:\/\/www.w3.org\/ns\/shacl#> .\r\n@prefix : <http:\/\/e.com\/> .\r\n\r\n:shapeGGGG a sh:PropertyShape ;\r\n  sh:class :B .\r\n",
+    "objectShape": "@prefix rdf: <http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#> .\r\n@prefix rdfs: <http:\/\/www.w3.org\/2000\/01\/rdf-schema#> .\r\n@prefix sh: <http:\/\/www.w3.org\/ns\/shacl#> .\r\n@prefix : <http:\/\/e.com\/> .\r\n\r\n:shapeGGGG a sh:NodeShape ;\r\n  sh:hasValue :A .\r\n"
+  }
+]

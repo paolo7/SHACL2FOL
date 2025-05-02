@@ -140,7 +140,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 		
 	}
 	// code adapted from https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
-	private static String toAlphabetic(int i) {
+	public static String toAlphabetic(int i) {
 	    int quot = i/26;
 	    int rem = i%26;
 	    char letter = (char)((int)'A' + rem);
@@ -867,11 +867,11 @@ public class TPTP_Encoder implements FOL_Encoder {
 		String predicate = lookupActionIRI(a.getLeftOperandProperty(),'p');
 		new_recursive_paths = "";
 		tptp = transformTPTP(tptp, predicate, a, sr);
-		if(new_recursive_paths.length() > 0) {
+		/*if(new_recursive_paths.length() > 0) {
 			writeComment(sr.actionBeginTag);
 			tptp += new_recursive_paths;
 			writeComment(sr.actionEndTag);
-		}	
+		}*/	
 		if(new_action_shapes.length() > 0) {
 			writeComment(sr.actionBeginTag);
 			tptp += new_action_shapes;
@@ -879,8 +879,11 @@ public class TPTP_Encoder implements FOL_Encoder {
 		}		
 	}
 	
+    private int shape_placeholder_counter = 0;
+    
     public String transformTPTP(String tptpContent, String predicateName, Action a, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
-        // Define the markers
+        tptp = "";
+    	// Define the markers
         String startMarker = "@@ab@@->";
         String endMarker = "<-@@ae@@";
 
@@ -891,8 +894,6 @@ public class TPTP_Encoder implements FOL_Encoder {
 
         Matcher sectionMatcher = sectionPattern.matcher(tptpContent);
         StringBuffer result = new StringBuffer();
-        String subjectConstant = a.getSubjectConstraint() == null ? null : lookupActionIRI(a.getSubjectConstraint(),'c');
-        String objectConstant = a.getObjectConstraint() == null ? null : lookupActionIRI(a.getObjectConstraint(),'c');
         while (sectionMatcher.find()) {
             String section = sectionMatcher.group(1);
 
@@ -904,13 +905,60 @@ public class TPTP_Encoder implements FOL_Encoder {
             StringBuffer transformedSection = new StringBuffer();
             while (predicateMatcher.find()) {
                 String arg1 = predicateMatcher.group(1);
-                //if(subjectConstant != null && ! subjectConstant.equals(arg1))
-                //	continue;
                 String arg2 = predicateMatcher.group(2);
-                //if(objectConstant != null && ! objectConstant.equals(arg2))
-                //	continue;
-                String addition = getActionRightOperandTemplate(a,arg1,arg2, sr);
-                // this is 
+                if(!a.hasBeenDefined()) {
+                	a.setHasBeenDefined(true);
+            		a.shapePlaceholder = "ps"+toAlphabetic(shape_placeholder_counter);
+            		shape_placeholder_counter += 1;
+            		String addition = ls+"% Encoding of placeholder relation "+a.shapePlaceholder;
+            		addition += ls+getTptpPrefix()+"(axiom_"+getAxiomName()+",axiom,";
+            		addition += ls+ indent + " ( ! [X, Y] : (";
+            		addition += ls+ indent + indent + a.shapePlaceholder+"(X,Y) <=> ";
+            		
+            		if(a instanceof TupleAction) {
+                		TupleAction action = (TupleAction) a;
+                		String actionExpression = "X = " + lookupActionIRI(action.subject,'c') + " & Y = " + lookupActionIRI(action.object,'c') ;
+                		if (a.isAdd())
+                			addition += "(" + predicateName + "(X,Y) | ("+actionExpression+"))";
+                    	else
+                    		addition += "(" + predicateName + "(X,Y) & ~ ("+actionExpression+") )";
+                	} else if(a instanceof PathAction) {
+                		PathAction action = (PathAction) a;
+                		PropertyPath p = sr.parseActionPath(action.path);
+                		String pathEncoded = encodePath(p,"X", "Y", false,"a"+toAlphabetic(uniqueVarName));
+                		uniqueVarName++;
+                		if (a.isAdd())
+                			addition += "(" + predicateName + "(X,Y) | ("+pathEncoded+"))";
+                    	else
+                    		addition += "(" + predicateName + "(X,Y) & ~ ("+pathEncoded+") )";
+                	} else if(a instanceof ShapeAction) {
+                		ShapeAction action = (ShapeAction) a;
+                		tptp = ""; 
+                		IRI subjectShapeIRI = encodeShapeAction(action,sr,true);
+                		IRI objectShapeIRI = encodeShapeAction(action,sr,false);
+                		String subjectShapePredicate = lookup(subjectShapeIRI,'s');
+                		String objectShapePredicate = lookup(objectShapeIRI,'s');
+                		if (a.isAdd())
+                			addition += "(" + predicateName + "(X,Y) | ( "+subjectShapePredicate+"(X) & "+objectShapePredicate+"(Y) ))";
+                    	else
+                    		addition += "(" + predicateName + "(X,Y) & ~ ("+subjectShapePredicate+"(X) & "+objectShapePredicate+"(Y) ))";
+                    		//
+                    		//shapePredicate = 
+                    		//action.shapePredicate = shapePredicate;
+                    		//action.setHasBeenDefined(true);
+                		
+
+                	} else throw new RuntimeException("Encountered an unknown action type");         	
+            
+            		addition += ls+ indent + indent + " ) )";
+            		addition += ls+ indent + " )."+ls;
+            		tptp += addition;
+                }
+                
+                String replacement = a.shapePlaceholder+"(" + arg1 + ", " + arg2 + ")";
+                predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
+                
+                /*// this is 
                 // String addition = "p_new(" + arg2 + ", " + arg1 + ")";
                 String replacement = "";
                 if(subjectConstant != null && objectConstant != null) {
@@ -930,7 +978,7 @@ public class TPTP_Encoder implements FOL_Encoder {
                 		replacement += "(" + predicateName + "(" + arg1 + ", " + arg2 + ") & ~ ("+addition+") )";
                 	replacement += ") ) ";
                 	predicateMatcher.appendReplacement(transformedSection, Matcher.quoteReplacement(replacement));
-                }
+                }*/
             }
             predicateMatcher.appendTail(transformedSection);
 
@@ -939,10 +987,12 @@ public class TPTP_Encoder implements FOL_Encoder {
         }
 
         sectionMatcher.appendTail(result);
+        new_action_shapes = tptp;
         return result.toString();
     }
     
-    private String getActionRightOperandTemplate(Action a, String var1, String var2, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
+
+/*private String getActionRightOperandTemplate(Action a, String var1, String var2, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
     	if(a instanceof TupleAction) {
     		TupleAction action = (TupleAction) a;
     		return var1 + " = " + lookupActionIRI(action.subject,'c') + " & " +var2+ " = " + lookupActionIRI(action.object,'c') ;
@@ -954,25 +1004,22 @@ public class TPTP_Encoder implements FOL_Encoder {
     		return pathEncoded;
     	} else if(a instanceof ShapeAction) {
     		ShapeAction action = (ShapeAction) a;
-    		String shapePredicate = action.shapePredicate;
-    		if(!action.hasBeenDefined()) {
-        		IRI shapeIRI = encodeShapeAction(action,sr);
-        		shapePredicate = lookup(shapeIRI,'s');
-        		action.shapePredicate = shapePredicate;
-        		action.setHasBeenDefined(true);
+
+    		if(!action.hasBeenDefined()) { 			
+        		action.shapePlaceholder = "ps_"+toAlphabetic(shape_placeholder_counter);
+        		shape_placeholder_counter += 1;
+        		//IRI shapeIRI = encodeShapeAction(action,sr);
+        		//shapePredicate = 
+        		//action.shapePredicate = shapePredicate;
+        		//action.setHasBeenDefined(true);
     		}
-    		if(action.isSubject)
-    			return shapePredicate+"("+var2+")";
-    		else
-    			return shapePredicate+"("+var1+")";
-    	}
-    	throw new RuntimeException("Encountered an unknown action type");
-    }
+    		return action.shapePlaceholder+"("+var1+","+var2+")";
+
+    	} else throw new RuntimeException("Encountered an unknown action type");
+    }*/
     
-    private IRI encodeShapeAction(ShapeAction action, ShapeReader sr) throws RDFParseException, RepositoryException, IOException {
-		tptp = "";    	
-		IRI shapeIRI = sr.parseActionShape(action.shape,this);
-		new_action_shapes = tptp;
+    private IRI encodeShapeAction(ShapeAction action, ShapeReader sr, boolean encodeSubject) throws RDFParseException, RepositoryException, IOException {		   	
+		IRI shapeIRI = sr.parseActionShape(encodeSubject ? action.subjectShape: action.objectShape,this);		
     	return shapeIRI;
     }
 

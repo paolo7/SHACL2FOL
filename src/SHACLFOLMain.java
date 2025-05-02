@@ -3,6 +3,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,6 +16,7 @@ import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
+import actions.ActionParser;
 import actions.PathAction;
 import actions.ShapeAction;
 import actions.TupleAction;
@@ -24,7 +27,7 @@ import logic.TPTP_Encoder;
 
 public class SHACLFOLMain {
 
-	public static void main(String[] args) throws RDFParseException, RepositoryException, IOException {
+	public static void main(String[] args) throws Exception {
 		Config.readDefaultConfig();
 		String outputFilename = Config.tptpOutputFile;
 		String proverCommand = Config.proverPath;
@@ -214,53 +217,15 @@ public class SHACLFOLMain {
 		return (!outResult.isSatisfiable());
 	}
 
-	public static boolean testActionsStaticValidation(String pathToSHACLone, String pathToSHACLtwo, String pathToTPTP,
-			String proverCommand) throws RDFParseException, RepositoryException, IOException {
+	public static boolean testActionsStaticValidation(String pathToSHACLone, String pathToActionJson, String pathToTPTP,
+			String proverCommand) throws Exception {
 
 		File shapeGraphOne = new File(pathToSHACLone);
 		Repository repoSone = new SailRepository(new MemoryStore());
 		RepositoryConnection connSone = repoSone.getConnection();
 		connSone.add(shapeGraphOne);
+		List<Action> actions = ActionParser.readActionsFromFile(pathToActionJson);
 
-		List<Action> actions = new LinkedList<Action>();
-		//actions.add(new TupleAction(true, "http://e.com/hasSupervisor", "http://e.com/Jane", "http://e.com/John"));
-		//actions.add(new PathAction(false, "http://e.com/hasRegion", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		//actions.add(new PathAction(true, "http://e.com/hasFaculty", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		String shapeactionOne = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
-				+ "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
-				+ "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"
-				+ "@prefix : <http://e.com/> .\n"
-				+ "\n"
-				+ ":shapeGGGG a sh:NodeShape ;\n"
-				+ "  sh:and (\n"
-				+ "	[ sh:path (:hasSupervisor :hasFaculty) ;\n"
-				+ "         sh:minCount 1 ]\n"
-				+ "        [ sh:path (:hasFaculty) ;\n"
-				+ "         sh:minCount 1 ]\n"
-				+ "  ).";
-		
-
-		String shapeactionTwo = "@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"
-				+ "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
-				+ "@prefix sh: <http://www.w3.org/ns/shacl#> .\n"
-				+ "@prefix : <http://e.com/> .\n"
-				+ "\n"
-				+ ":shapeGGGG a sh:PropertyShape ;\n"
-				+ "  sh:class :B .\n";
-
-		//A minus B, whenever I find B, I remove A
-		actions.add(new ShapeAction(false, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
-		
-		//A plus B (whenever I find B, I add A
-		actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
-		
-
-
-		//actions.add(new ShapeAction(true, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", "http://e.com/A", false, shapeactionTwo));
-		//actions.add(new PathAction(true, "http://e.com/hasDepartment", "( <http://e.com/hasDepartment> <http://e.com/hasDepartmentLead> )"));
-		//actions.add(new PathAction(true, "http://e.com/hasDepartmentLead", "[ <http://www.w3.org/ns/shacl#zeroOrMorePath> <http://e.com/anotherRel> ]"));
-		//actions.add(new TupleAction(true, "http://e.com/anotherRel", "http://e.com/Jane", "http://e.com/John"));
-		//actions.add(new TupleAction(false, "http://e.com/hasBuilding", "http://e.com/Jane", "http://e.com/John"));
 		File shapeGraphTwo = new File(pathToSHACLone);
 		Repository repoStwo = new SailRepository(new MemoryStore());
 		RepositoryConnection connStwo = repoStwo.getConnection();

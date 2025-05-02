@@ -34,12 +34,41 @@ To perform a validity check:
 * arg[1] the path to the shape graph
 * arg[2] the path to the data graph
 
+To perform an action preservation check:
+* arg[0] the letter 'a'
+* arg[1] the path to the shape graph
+* arg[2] the path to JSON filed containing the actions
+
 To check for the final model property, configure the arguments of the prover command accordingly using the `proverArguments` property in `config.properties`.
 For example, to look for final models in Vampire 4.9 this property can be set to: 
 
 ```
 proverArguments=--saturation_algorithm fmb
 ```
+
+## Action JSON Data Model
+
+Actions should be specified as a JSON file containing a list of action objects, meant to be performed in the given order. Strings containing IRIs or RDF shape should be appropriately escaped to be valid JSON strings. Please see `actions1.json` in the Runnable folder a valid example. Two action types are defined:
+
+*Path Actions*
+
+This action adds/removes a triple x r y, whenever the graph contains a path p from x to y. This object must have four fields:
+
+* `"type": "PathAction"`
+* `isAdd` should be True if the triples should be added, false if they should be removed
+* `predicate` the full IRI of the predicate r of the triples to be added
+* `path` SHACL property path p
+
+*SHAPE Actions*
+
+This action adds/removes a triple x r y, between all the nodes x in the graph that satisfy Shape1, and all the nodes y that satisfy Shape2. This object must have five fields:
+
+* `"type": "ShapeAction"`
+* `isAdd` should be True if the triples should be added, false if they should be removed
+* `predicate` the full IRI of the predicate r of the triples to be added
+* `subjectShape` a string representation of Shape1
+* `objectShape` a string representation of Shape2
+
 
 ## Using a TPTP file with the E theorem prover
 

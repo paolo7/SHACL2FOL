@@ -43,6 +43,7 @@ import actions.Action;
 import filters.Filter;
 import filters.FilterImpl;
 import logic.FOL_Encoder;
+import logic.TPTP_Encoder;
 import paths.IRI_Path;
 import paths.PropertyPath;
 import paths.List_Path;
@@ -922,6 +923,8 @@ public class ShapeReader {
     }
 	
 	public IRI parseActionShape(String shape, FOL_Encoder encoder) throws RDFParseException, RepositoryException, IOException {
+		if (shape == null)
+			return null;
 		RepositoryConnection conn = connectToStringGraph(shape);
 		Set<Resource> nodeShapes = getNodeShapes(conn);
 		Set<Resource> propertyShapes = getPropertyShapes(conn);
@@ -937,7 +940,7 @@ public class ShapeReader {
 		//String mainShape = namedShapes.iterator().next().stringValue();
 		replaceBlankNodesInRepository(conn);
 		actionShapeBaseURIiterator += 1;
-		IRI newIRIforShape = Values.iri(actionShapeBaseURI+actionShapeBaseURIiterator);
+		IRI newIRIforShape = Values.iri(actionShapeBaseURI+TPTP_Encoder.toAlphabetic(actionShapeBaseURIiterator));
 		replaceIriInAllTriples(conn, (IRI) namedShapes.iterator().next(), newIRIforShape);
 		nodeShapes = getNodeShapes(conn);
 		propertyShapes = getPropertyShapes(conn);

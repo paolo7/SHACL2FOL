@@ -1,28 +1,31 @@
 package actions;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ShapeAction extends Action{
 
 	public String predicate;
-	public String shape;
-	public String constant;
-	public boolean isSubject;
+	public String objectShape;
+	public String subjectShape;
+	
 	public boolean isAdd;
-	public String shapePredicate;
+	
 	
 	/**
 	 * 
 	 * @param isAdd
 	 * @param predicate
-	 * @param constant
+	 * @param subjectShape
 	 * @param isSubject
-	 * @param shape a SHACL graph in turtle format, containing only one named shape (only one shape that has an IRI as a shape name). There can be other shapes but they must be identified by blank nodes.
+	 * @param objectShape a SHACL graph in turtle format, containing only one named shape (only one shape that has an IRI as a shape name). There can be other shapes but they must be identified by blank nodes.
 	 */
-	public ShapeAction(boolean isAdd, String predicate, String constant, boolean isSubject, String shape) {
+	@JsonCreator
+	public ShapeAction(@JsonProperty("isAdd") boolean isAdd, @JsonProperty("predicate") String predicate, @JsonProperty("subjectShape") String subjectShape, @JsonProperty("objectShape") String objectShape) {
 		this.predicate = predicate;
-		this.shape = shape;
+		this.objectShape = objectShape.replace("\\n", "\n");;
+		this.subjectShape = subjectShape.replace("\\n", "\n");;
 		this.isAdd = isAdd;
-		this.constant = constant;
-		this.isSubject = isSubject;
 	}
 	
 	@Override
@@ -33,20 +36,6 @@ public class ShapeAction extends Action{
 	@Override
 	public String getLeftOperandProperty() {
 		return predicate;
-	}
-
-	@Override
-	public String getSubjectConstraint() {
-		if(isSubject) 
-			return constant;
-		return null;
-	}
-
-	@Override
-	public String getObjectConstraint() {
-		if(!isSubject)
-			return constant;
-		return null;
 	}
 
 }
