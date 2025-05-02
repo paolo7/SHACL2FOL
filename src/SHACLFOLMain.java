@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -13,6 +14,7 @@ import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.rio.RDFParseException;
+import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 
 import actions.Action;
@@ -306,5 +308,78 @@ public class SHACLFOLMain {
 		System.out.println("Time (s) " + outResult.getTimeElapsedSeconds());
 
 		return (!outResult.isSatisfiable());
+	}
+	
+	public static TestOutput runTestActionsStaticValidation(String shaclRDF, List<Action> actions) throws Exception {
+
+		Repository repoSone = new SailRepository(new MemoryStore());
+		RepositoryConnection connSone = repoSone.getConnection();
+		StringReader reader = new StringReader(shaclRDF);
+		connSone.add(reader, "", Rio.getParserFormatForMIMEType("application/x-turtle").get());
+		
+		Repository repoTwo = new SailRepository(new MemoryStore());
+		RepositoryConnection connStwo = repoTwo.getConnection();
+		StringReader readerTwo = new StringReader(shaclRDF);
+		connStwo.add(readerTwo, "", Rio.getParserFormatForMIMEType("application/x-turtle").get());
+
+		// change shape names in the second version
+		String updateQuery = """
+				    PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+				    DELETE {
+				        ?shape ?p ?o .
+				    }
+				    INSERT {
+				        ?newShape ?p ?o .
+				    }
+				    WHERE {
+				        ?shape ?p ?o .
+				        FILTER EXISTS {
+				            ?shape a ?shapeType .
+				            FILTER (?shapeType IN (sh:NodeShape, sh:PropertyShape))
+				        }
+				        BIND(IRI(CONCAT(STR(?shape), "II")) AS ?newShape)
+				    };
+
+				    # Preserve all other triples
+				    INSERT {
+				        ?s ?p ?o .
+				    }
+				    WHERE {
+				        ?s ?p ?o .
+				        FILTER NOT EXISTS {
+				            ?s a ?shapeType .
+				            FILTER (?shapeType IN (sh:NodeShape, sh:PropertyShape))
+				        }
+				    }
+				""";
+
+		connStwo.prepareUpdate(updateQuery).execute();
+
+		FOL_Encoder encoder = new TPTP_Encoder(actions);
+
+		ShapeReader converter = new ShapeReader(connSone, connStwo, actions);
+
+		converter.convert(encoder, 'a');
+		String pathToTPTP = "./testSet.tptp";
+		File outputFile = new File(pathToTPTP);
+		outputFile.createNewFile();
+		FileOutputStream outStream = new FileOutputStream(outputFile, false);
+		outStream.write(encoder.getEncodingAsString().getBytes(Charset.forName("UTF-8")));
+		outStream.close();
+		String proverCommand = "./vampire --saturation_algorithm fmb";
+		Runtime rt = Runtime.getRuntime();
+		String[] a = (proverCommand+" "+pathToTPTP).split(" ");
+		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
+		InputStream consoleOutput = pr.getInputStream();
+
+		StringBuilder textBuilder = new StringBuilder();
+		int c = 0;
+		while ((c = consoleOutput.read()) != -1) {
+			textBuilder.append((char) c);
+		}
+		String output = textBuilder.toString();
+		TestOutput outResult = new TestOutput(output);
+		return outResult;
 	}
 }
