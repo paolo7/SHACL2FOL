@@ -310,7 +310,7 @@ public class SHACLFOLMain {
 		return (!outResult.isSatisfiable());
 	}
 	
-	public static TestOutput runTestActionsStaticValidation(String shaclRDF, List<Action> actions) throws Exception {
+	public static TestOutput runTestActionsStaticValidation(String shaclRDF, List<Action> actions, boolean fm) throws Exception {
 
 		Repository repoSone = new SailRepository(new MemoryStore());
 		RepositoryConnection connSone = repoSone.getConnection();
@@ -367,12 +367,14 @@ public class SHACLFOLMain {
 		FileOutputStream outStream = new FileOutputStream(outputFile, false);
 		outStream.write(encoder.getEncodingAsString().getBytes(Charset.forName("UTF-8")));
 		outStream.close();
-		String proverCommand = "./vampire --saturation_algorithm fmb";
+		//String proverCommand = "./vampire";
+		String proverCommand = fm ? "./vampire --mode portfolio --saturation_algorithm fmb" : "./vampire";
 		Runtime rt = Runtime.getRuntime();
 		String[] a = (proverCommand+" "+pathToTPTP).split(" ");
 		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));
 		InputStream consoleOutput = pr.getInputStream();
-
+		connSone.close();
+		connStwo.close();
 		StringBuilder textBuilder = new StringBuilder();
 		int c = 0;
 		while ((c = consoleOutput.read()) != -1) {

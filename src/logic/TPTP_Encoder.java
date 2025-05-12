@@ -603,7 +603,7 @@ public class TPTP_Encoder implements FOL_Encoder {
 				String shape_q = lookup(q,'s');
 				for(int i = 0; i < min; i++) {
 					String varname = baseVar+"_C_"+toAlphabetic(i);
-					constraint += " & shape_q("+varname+")";
+					constraint += " & "+shape_q+"("+varname+")";
 				}
 			}
 		}
@@ -620,10 +620,10 @@ public class TPTP_Encoder implements FOL_Encoder {
 			Set<Resource> hasqualifiedValueShapeValues) {
 		String shape = lookup(s,'s');
 		int limit = ((Literal) v).integerValue().intValue();
-		if(limit == 0) {
-			if(isMax) 			
-				addConstraint(shape, FALSE);
-			else 			
+		if(limit == 0 & !isMax) {
+			//if(isMax) 			
+			//	addConstraint(shape, FALSE);
+			//else 			
 				addConstraint(shape, TRUE);
 		} else if(limit <  0){
 			throw new NegativeCountForCountingQuantifierException();

@@ -25,5 +25,10 @@ public class PathAction extends Action{
 	public String getLeftOperandProperty() {
 		return predicate;
 	}
+	
+	@Override
+	public String toString() {
+		return predicate + (isAdd ? " + " : " - " )+path;
+	}
 
 }

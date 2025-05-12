@@ -37,5 +37,10 @@ public class ShapeAction extends Action{
 	public String getLeftOperandProperty() {
 		return predicate;
 	}
+	
+	@Override
+	public String toString(){
+		return predicate + (isAdd ? " + " : " - ") +"\nSUBJECT:\n"+subjectShape+"\nOBJECT:\n"+objectShape+"\n";
+	}
 
 }

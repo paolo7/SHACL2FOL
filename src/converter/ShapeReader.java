@@ -244,7 +244,11 @@ public class ShapeReader {
     		return;
         // Load all statements
         List<Statement> allStatements = new ArrayList<>();
-        conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
+        
+        try (RepositoryResult<Statement> statements = conn.getStatements(null, null, null, true)) {
+            statements.forEachRemaining(allStatements::add);
+        }
+        //conn.getStatements(null, null, null, true).forEachRemaining(allStatements::add);
 
         // SHACL-related IRIs
         IRI NODE_SHAPE = vf.createIRI("http://www.w3.org/ns/shacl#NodeShape");
@@ -469,10 +473,15 @@ public class ShapeReader {
 	}
 	private List<Value> getRDFList(Resource r, RepositoryConnection c) {
 		Model m = new LinkedHashModel();
-		RepositoryResult<Statement> results = c.getStatements(null, null, null);
+		try (RepositoryResult<Statement> results = c.getStatements(null, null, null)) {
+		    while (results.hasNext()) {
+		        m.add(results.next());
+		    }
+		}
+		/*RepositoryResult<Statement> results = c.getStatements(null, null, null);
 		while(results.hasNext()) {
 			m.add(results.next());
-		}
+		}*/
 		//m.addAll(c.getStatements(null, null, null).asList());
 		List<Value> collection = new LinkedList<Value>();
 		RDFCollections.asValues(m, r,collection);
@@ -489,9 +498,14 @@ public class ShapeReader {
 	
 	private Value getObjectOfBlankNode(Resource r, IRI predicate, RepositoryConnection c) {
 		Model m = new LinkedHashModel();
-		RepositoryResult<Statement> results = c.getStatements(null, null, null);
+		/*RepositoryResult<Statement> results = c.getStatements(null, null, null);
 		while(results.hasNext()) {
 			m.add(results.next());
+		}*/
+		try (RepositoryResult<Statement> results = c.getStatements(null, null, null)) {
+		    while (results.hasNext()) {
+		        m.add(results.next());
+		    }
 		}
 		//m.addAll(c.getStatements(null, null, null).asList());
 		Model matchedTriples = m.filter(r, predicate, null);
@@ -946,6 +960,7 @@ public class ShapeReader {
 		propertyShapes = getPropertyShapes(conn);
 		convert_constraints(nodeShapes, true, encoder, conn);
 		convert_constraints(propertyShapes, false, encoder, conn);
+		conn.close();
 		return newIRIforShape;
 	}
 	
