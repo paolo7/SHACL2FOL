@@ -13,7 +13,7 @@ The outputs of this tool are two:
 * Firstly, the desired first order logic theory in the TPTP format: http://www.tptp.org/
 * Secondly, the answer to the satisfiability/containment/validation decision problems, by applying a desired theorem prover.
 
-## Installation
+## Setup
 
 1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ (you can get the latest release here https://github.com/vprover/vampire/releases , it was tested on Vampire 4.9).
 2. Configure the config.properties file with the path to the theorem prover executable .
@@ -80,6 +80,24 @@ After installing E, you can run the satisfiability check running the following c
 * `./eprover test.tptp`
 
 If your TPTP file is satisfiable (and thus if the original SHACL document is satisfiable), the following line will be printed on console: `SZS status Satisfiable`; or else you will see `SZS status Unsatisfiable`.
+
+## Running Performance Tests
+
+The `TestActions.java` file contains the functions to run a performance evaluation of the evaluation of a shape validity preservation under updates check. To run the experiments in the paper "SHACL Validation under Graph Updates" run the main method of `TestActions.java`. To run custom evaluation checks, you can use one of the following two methods:
+
+`runPerformanceCheckScalingActions` with the following parameters:
+* `trials` how many trials to run for each variable configuration (the average of those is computed)
+* `constant_n` how many constants to use	     
+* `shape_ratio` how many shapes to create for each constant	     
+* `maxActions` the maximum number of actions to test (it will test from 1 to maxActions at 5 actions intervals	     
+* `fm` true if the finite model property is to be enforced on the satisfiability checking
+
+`runPerformanceCheckScalingShapes` with the following parameters:
+* `trials` how many trials to run for each variable configuration (the average of those is computed)
+* `maxShapes` the maximum number of shapes to consider (it will test from 10 to this number at 10-intervals)
+* `shape_ratio` how many shapes there will be for every constant
+* `action_n` the fixed number of actions to use
+* `fm` true if the finite model property is to be enforced on the satisfiability checking
 
 ## Limitations
 

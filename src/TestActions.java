@@ -17,39 +17,13 @@ import actions.ShapeAction;
 public class TestActions {
 
 	
-	private static int seed = 5;
+	private static int seed = 1;
 	private static Random random = new Random(seed);
 	
 	public static void main(String[] args) throws Exception {
-		//runTests();
-		
-		{
-			// Previous main
-		
-			runPerformanceCheckWithCases(6,10,10,0.5,10,500,true);
-			runPerformanceCheckWithCasesGrowShapes(6,100,0.5,20,false);
-		}
-		//runPerformanceCheckWithCases(1,50,50,0.5,10,30,false);
-		
-		//runCommand(new String[]{"s","./LargeShape.ttl"});
-		/*
-		// test sat
-		runCommand(new String[]{"s","./M1.ttl"});
-		
-		
-		// test cont 1
-		
-		runCommand(new String[]{"c","./M1.ttl","./M1.ttl"});
-		
-		// test cont 2
-		runCommand(new String[]{"c","./M1.ttl","./M2.ttl"});
-		// test actions
-		runCommand(new String[]{"a","./M1.ttl","./actions1.json"});
-		//String[] parameters = new String[]{"a","./M1.ttl","./actions.ttl"};
-		
-		//String[] parameters = new String[]{"a","./StudentShapesAlt.ttl","./actions.ttl"};		
-		//SHACLFOLMain.main(parameters);
-		*/
+		runPerformanceCheckWithCases(10,20,0.5,10,150,false);
+		runPerformanceCheckWithCases(10,20,0.5,10,150,true);
+		runPerformanceCheckScalingShapes(10,70,0.5,20,false);		
 	}
 	
 	private static void runCommand(String[] args) throws Exception {
@@ -219,7 +193,7 @@ public class TestActions {
 		String shape = "  sh:path "+getRandomRelation(relation_n,false)+" ; \n";
 		if(random.nextBoolean()) {
 			// create sh:equals
-			shape += "  sh:equals "+getRandomRelation(relation_n,false)+" ; \n";
+			shape += "  sh:"+(random.nextBoolean() ? "equals":"disjoint")+" "+getRandomRelation(relation_n,false)+" ; \n";
 		} else {
 			// create min max count
 			if(random.nextBoolean()) {
@@ -308,33 +282,7 @@ public class TestActions {
 			return generateShapeAction(constant_n, relation_n);
 	}
 	
-	
-	/**
-	 * 
-	 * @param constant_n
-	 * @param relation_n
-	 * @param action_n
-	 * @param constraintType, 0 for shape constraints, 1 for path constraints
-	 * @throws Exception
-	 */
-	private static void runPerformanceCheck(int constant_n, int relation_n, int action_n, int constraintType) throws Exception {
-		//System.out.println("Performance Check: Creating initial shapes graph.");
-		String shape = createSynteticShape(constant_n, relation_n, 0.5, constraintType);
-		//System.out.println(shape);
-		//System.out.println("Performance Check: Creating list of actions.");
-		List<Action> actions = new LinkedList<Action>();
-		for(int i = 0; i < action_n; i++) {
-			Action a = generateAction(constant_n, relation_n, constraintType);
-			actions.add(a);
-			//System.out.println(a);
-		}		
-		
-		TestOutput result = SHACLFOLMain.runTestActionsStaticValidation(shape, actions, true);
-		
-		//System.out.println("Performance Check: Terminated.");
-	}
-	
-	private static void runTests() throws Exception {
+	public static void runTests() throws Exception {
 		passed = 0;
 		failed = 0;
 		System.out.println("Testing Actions");
@@ -393,19 +341,6 @@ public class TestActions {
 			checkValidityPreserved(result,true);
 		}
 		System.out.println("Passed tests: "+passed+" / "+(passed+failed));
-		
-		/*// run performance check
-		{
-			List<Action> allRelevantActions = new LinkedList<Action>();
-			allRelevantActions.add(A_plus_B);
-			allRelevantActions.add(A_minus_B);
-			allRelevantActions.add(Supervisor_plus_Manager);
-			allRelevantActions.add(Supervisor_minus_Manager);
-			allRelevantActions.add(Manager_minus_Employee);
-			allRelevantActions.add(Manager_plus_Employee);
-			//analyzePerformanceSatCategory(testShape2, allRelevantActions, 500);
-			analyzePerformanceSatCategoryLargeShape(testShape1, allRelevantActions, 1);
-		}*/
 		
 	}
 	
@@ -615,25 +550,33 @@ public class TestActions {
 	        }
 	    }
 	    
-	    
-	    private static void runPerformanceCheckWithCases(int trials, int constant_n, int relation_n, double shape_ratio, int action_n, int maxActions, boolean fm) throws Exception {
-	        if (constant_n <= 0 || relation_n <= 0 || action_n <= 0 || maxActions < 0) {
+	    /**
+	     * 
+	     * @param trials how many trials to run for each variable configuration (the average of those is computed)
+	     * @param constant_n how many constants to use
+	     * @param shape_ratio how many shapes to create for each constant
+	     * @param maxActions the maximum number of actions to test (it will test from 1 to maxActions at 5 actions intervals
+	     * @param fm true if the finite model property is to be enforced on the satisfiability checking
+	     * @throws Exception
+	     */
+	    public static void runPerformanceCheckScalingActions(int trials, int constant_n, double shape_ratio, int maxActions, boolean fm) throws Exception {
+	        if (constant_n <= 0 || maxActions < 0) {
 	            throw new IllegalArgumentException("Input parameters must be positive and maxActions >= 0");
 	        }
 
 	        Random random = new Random();
 
-	        for (int constraintType = 0; constraintType <= 2; constraintType++) {
+	        for (int constraintType = 2; constraintType <= 2; constraintType++) {
 
 	            // Prepare output file
-	            String fileName = "performance_metrics_type_" + constraintType + ".csv";
+	            String fileName = "performance_metrics_type_" + constraintType + (fm ? "T" : "F")+".csv";
 	            PrintWriter writer = new PrintWriter(new FileWriter(fileName));
 	            writer.println("ActionListSize,AvgTimeSeconds,AvgMemoryKB,AvgTotalTimeSeconds,AvgIsSatisfiable,TimeOuts,Errors");
 	            
-	            for (int i = 1; i <= maxActions; i+=10) {
+	            for (int i = 1; i <= maxActions; i+=5) {
 	            	
-	            	if(i == 11) i--;
-                    System.out.println("Type " + constraintType + ": +" + i);
+	            	if(i == 6) i--;
+                    
 	                double totalTime = 0;
 	                double totalMemory = 0;
 	                double totalWallTime = 0;
@@ -643,19 +586,13 @@ public class TestActions {
 	                int error_events = 0;
 	                for (int trial = 0; trial < trials+time_out_events+error_events; trial++) {
 	                	
-	                	String shape = createSynteticShape(constant_n, relation_n, shape_ratio, constraintType);
+	                	String shape = createSynteticShape(constant_n/2, constant_n/2, shape_ratio, constraintType);
 	                	
-	                	List<Action> baseActions = new LinkedList<>();
-			            for (int j = 0; j < maxActions/2+1; j++) {
-			                Action a = generateAction(constant_n, relation_n, constraintType);
-			                baseActions.add(a);
-			            }
 			            
 	                    // Generate a new random sample each time
 	                    List<Action> selectedActions = new ArrayList<>();
 	                    for (int k = 0; k < i; k++) {
-	                        int randomIndex = random.nextInt(baseActions.size());
-	                        selectedActions.add(baseActions.get(randomIndex));
+	                    	selectedActions.add(generateAction(constant_n/2, constant_n/2, constraintType));
 	                    }
 
 	                    ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -663,7 +600,7 @@ public class TestActions {
 	                    Future<TestOutput> future = executor.submit(() -> SHACLFOLMain.runTestActionsStaticValidation(shape, selectedActions,fm));
 
 	                    try {
-	                        TestOutput result = future.get(30, TimeUnit.SECONDS);
+	                        TestOutput result = future.get(20, TimeUnit.SECONDS);
 	                        long endWallTime = System.nanoTime();
 	                        double wallTimeSeconds = (endWallTime - startWallTime) / 1_000_000_000.0;
 
@@ -675,7 +612,7 @@ public class TestActions {
 	                        totalMemory += memory;
 	                        totalWallTime += wallTimeSeconds;
 	                        satisfiableSum += isSat ? 1 : 0;
-
+	                        
 	                    } catch (TimeoutException e) {
 	                        System.out.println("Type " + constraintType + ": Timeout at i = " + i + " (trial " + trial + ")");
 	                        time_out_events +=1;
@@ -692,7 +629,7 @@ public class TestActions {
 	                double avgMemory = totalMemory / trials;
 	                double avgWallTime = totalWallTime / trials;
 	                double avgSat = satisfiableSum / trials;
-
+	                System.out.println("Type " + constraintType + ": +" + i+" sat ratio: "+(avgSat)+" Tot time: "+avgWallTime);
 	                writer.printf("%d,%.3f,%.1f,%.3f,%.3f,%d,%d%n", i, avgTime, avgMemory, avgWallTime, avgSat, time_out_events, error_events);
 	                //writer.printf("%d,%.3f,%.1f,%.3f,%.3f%n", i, avgTime, avgMemory, avgWallTime, avgSat);
 	            }
@@ -702,8 +639,16 @@ public class TestActions {
 	        }
 	    }
 
-	    
-	    private static void runPerformanceCheckWithCasesGrowShapes(int trials, int maxShapes, double shape_ratio, int action_n, boolean fm) throws Exception {
+	    /**
+	     * 
+	     * @param trials how many trials to run for each variable configuration (the average of those is computed)
+	     * @param maxShapes the maximum number of shapes to consider (it will test from 10 to this number at 10-intervals)
+	     * @param shape_ratio how many shapes there will be for every constant
+	     * @param action_n the fixed number of actions to use
+	     * @param fm true if the finite model property is to be enforced on the satisfiability checking
+	     * @throws Exception
+	     */
+	    public static void runPerformanceCheckScalingShapes(int trials, int maxShapes, double shape_ratio, int action_n, boolean fm) throws Exception {
 	        if (maxShapes <= 0 || action_n <= 0) {
 	            throw new IllegalArgumentException("Input parameters must be positive");
 	        }
@@ -711,7 +656,7 @@ public class TestActions {
 	        final int fixedMaxActions = action_n;
 	        Random random = new Random();
 
-	        for (int constraintType = 0; constraintType <= 2; constraintType++) {
+	        for (int constraintType = 2; constraintType <= 2; constraintType++) {
 
 	            // Prepare output file
 	            String fileName = "performance_metrics_type_shape_" + constraintType + ".csv";
@@ -753,7 +698,7 @@ public class TestActions {
 	                    Future<TestOutput> future = executor.submit(() -> SHACLFOLMain.runTestActionsStaticValidation(shape, selectedActions, fm));
 
 	                    try {
-	                        TestOutput result = future.get(30, TimeUnit.SECONDS);
+	                        TestOutput result = future.get(150, TimeUnit.SECONDS);
 	                        long endWallTime = System.nanoTime();
 	                        double wallTimeSeconds = (endWallTime - startWallTime) / 1_000_000_000.0;
 
