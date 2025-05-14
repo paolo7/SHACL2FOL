@@ -368,7 +368,7 @@ public class SHACLFOLMain {
 		outStream.write(encoder.getEncodingAsString().getBytes(Charset.forName("UTF-8")));
 		outStream.close();
 		//String proverCommand = "./vampire";
-		String proverCommand = fm ? "./vampire --mode portfolio --saturation_algorithm fmb" : "./vampire";
+		String proverCommand = fm ? "./vampire --mode portfolio --saturation_algorithm fmb" : "./vampire --mode portfolio";
 		Runtime rt = Runtime.getRuntime();
 		String[] a = (proverCommand+" "+pathToTPTP).split(" ");
 		Process pr = rt.exec((proverCommand+" "+pathToTPTP).split(" "));

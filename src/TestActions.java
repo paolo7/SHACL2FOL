@@ -21,9 +21,10 @@ public class TestActions {
 	private static Random random = new Random(seed);
 	
 	public static void main(String[] args) throws Exception {
-		runPerformanceCheckWithCases(10,20,0.5,10,150,false);
-		runPerformanceCheckWithCases(10,20,0.5,10,150,true);
-		runPerformanceCheckScalingShapes(10,70,0.5,20,false);		
+		runPerformanceCheckScalingShapes(5,70,0.5,20,false);
+		runPerformanceCheckScalingActions(5,20,0.5,150,false);
+		runPerformanceCheckScalingActions(10,20,0.5,150,true);
+		runPerformanceCheckScalingShapes(10,70,0.5,20,true);
 	}
 	
 	private static void runCommand(String[] args) throws Exception {
@@ -631,7 +632,7 @@ public class TestActions {
 	                double avgSat = satisfiableSum / trials;
 	                System.out.println("Type " + constraintType + ": +" + i+" sat ratio: "+(avgSat)+" Tot time: "+avgWallTime);
 	                writer.printf("%d,%.3f,%.1f,%.3f,%.3f,%d,%d%n", i, avgTime, avgMemory, avgWallTime, avgSat, time_out_events, error_events);
-	                //writer.printf("%d,%.3f,%.1f,%.3f,%.3f%n", i, avgTime, avgMemory, avgWallTime, avgSat);
+	                writer.flush();
 	            }
 
 	            writer.close();
@@ -659,7 +660,7 @@ public class TestActions {
 	        for (int constraintType = 2; constraintType <= 2; constraintType++) {
 
 	            // Prepare output file
-	            String fileName = "performance_metrics_type_shape_" + constraintType + ".csv";
+	            String fileName = "performance_metrics_type_shape_" + constraintType + (fm ? "T" : "F" ) + ".csv";
 	            PrintWriter writer = new PrintWriter(new FileWriter(fileName));
 	            writer.println("ConstantRelationSize,ActionListSize,AvgTimeSeconds,AvgMemoryKB,AvgTotalTimeSeconds,AvgIsSatisfiable,TimeOuts,Errors");
 
@@ -729,6 +730,7 @@ public class TestActions {
 	                double avgSat = satisfiableSum / trials;
 
 	                writer.printf("%d,%d,%.3f,%.1f,%.3f,%.3f,%d,%d%n", shapeSize, fixedMaxActions, avgTime, avgMemory, avgWallTime, avgSat, time_out_events, error_events);
+	                writer.flush();
 	            }
 
 	            writer.close();
