@@ -21,6 +21,10 @@ public class TestActions {
 	private static Random random = new Random(seed);
 	
 	public static void main(String[] args) throws Exception {
+		runEvaluationSuite();
+	}
+	
+	public static void runEvaluationSuite() throws Exception {
 		runPerformanceCheckScalingShapes(5,70,0.5,20,false);
 		runPerformanceCheckScalingActions(5,20,0.5,150,false);
 		runPerformanceCheckScalingActions(10,20,0.5,150,true);

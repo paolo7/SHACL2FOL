@@ -16,10 +16,10 @@ The outputs of this tool are two:
 
 ## Setup
 
-1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ (you can get the latest release here https://github.com/vprover/vampire/releases , it was tested on Vampire 4.9).
+1. Install a theorem prover. The recommended one is Vampire http://www.vprover.org/ (you can get the latest release here https://github.com/vprover/vampire/releases , it was tested on Vampire 4.9), although it only natively runs on Linux (extra steps might be needed to run it on Windows). Sample files required to run the tool can be found in the 'runnable' subfolder.
 2. Configure the config.properties file with the path to the theorem prover executable .
 3. Make sure the theorem prover executable file has permission to be executed .
-3. Run the SHACL2FOL.jar jar file with the following arguments:
+3. Run the SHACL2FOL.jar jar file with Java 21 or newer, in the same folder as the config.properties file with the following arguments:
 
 To perform a satisfiability check:
 * arg[0] the letter 's'
@@ -39,6 +39,8 @@ To perform an action preservation check:
 * arg[0] the letter 'a'
 * arg[1] the path to the shape graph
 * arg[2] the path to JSON filed containing the actions
+
+Example: `java -jar SHACL2FOL.jar a M1.ttl actions1.json`
 
 To check for the final model property, configure the arguments of the prover command accordingly using the `proverArguments` property in `config.properties`.
 For example, to look for final models in Vampire 4.9 this property can be set to: 
@@ -82,7 +84,10 @@ After installing E, you can run the satisfiability check running the following c
 
 If your TPTP file is satisfiable (and thus if the original SHACL document is satisfiable), the following line will be printed on console: `SZS status Satisfiable`; or else you will see `SZS status Unsatisfiable`.
 
-## Running Performance Tests
+## Running Performance Evaluation
+
+The executable JAR file can be configured to run the evaluation by setting the following parameter:
+* arg[0] the word 'evaluation'
 
 The `TestActions.java` file contains the functions to run a performance evaluation of the evaluation of a shape validity preservation under updates check. To run the experiments in the paper "SHACL Validation under Graph Updates" run the main method of `TestActions.java`. To run custom evaluation checks, you can use one of the following two methods:
 

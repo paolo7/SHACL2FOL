@@ -46,10 +46,22 @@ public class SHACLFOLMain {
 					+ "\n    arg[0] the letter 's'"
 					+ "\n    arg[1] the path to the shape graph to check for satisfiability"
 					+ "\n To perform a containment check (does the first shape graph contain the second?):"
-					+ "\n    arg[0] the letter 'c'" + "\n    arg[1] the path to the first shape graph"
-					+ "\n    arg[2] the path to the second shape graph" + "\n To perform a validity check:"
-					+ "\n    arg[0] the letter 'v'" + "\n    arg[1] the path to the shape graph"
-					+ "\n    arg[2] the path to the data graph" + "");
+					+ "\n    arg[0] the letter 'c'" 
+					+ "\n    arg[1] the path to the first shape graph"
+					+ "\n    arg[2] the path to the second shape graph" 
+					+ "\n To perform a validity check:"
+					+ "\n    arg[0] the letter 'v'" 
+					+ "\n    arg[1] the path to the shape graph"
+					+ "\n    arg[2] the path to the data graph" + ""
+					+ "\n To perform a static validation under updates check:"
+					+ "\n    arg[0] the letter 'a'" 
+					+ "\n    arg[1] the path to the shape graph"
+					+ "\n    arg[2] the path to the action JSON file" + ""
+					+ "\n To run tests:"
+					+ "\n    arg[0] the string 'test'" 
+					+ "\n To run evaluation:"
+					+ "\n    arg[0] the string 'evaluation'" 
+							+ "");
 		} else if (args[0].equals("s")) {
 			String pathToShapeGraph = args[1];
 			System.out.println("Performing Satisfiability check of " + pathToShapeGraph);
@@ -72,6 +84,10 @@ public class SHACLFOLMain {
 			System.out.println("Is the validation of shape graph " + pathToShapeGraph);
 			System.out.println("... affected by actions " + pathToActions + "?");
 			testActionsStaticValidation(pathToShapeGraph, pathToActions, outputFilename, proverCommand);
+		} else if (args[0].equals("test")) {
+			TestActions.runTests();
+		} else if (args[0].equals("evaluation")) {
+			TestActions.runEvaluationSuite();
 		}
 
 	}

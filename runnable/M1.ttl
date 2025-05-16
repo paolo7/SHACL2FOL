@@ -4,7 +4,9 @@
 @prefix : <http://e.com/> .
 
 :shapeOne a sh:PropertyShape ;
-sh:targetClass :A ;
+  sh:targetClass :A ;
 sh:path (:hasSupervisor
 :hasFaculty );
-sh:minCount 3 .
+sh:minCount 1 .
+
+
