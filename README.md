@@ -1,6 +1,6 @@
 # SHACL2FOL
 
-The SHACL2FOL tool allows you to convert SHACL into first order logic sentences in the SCL language (described here: https://arxiv.org/abs/2108.13063 ) and compute the answer to a number of decision problems.
+The SHACL2FOL tool allows you to convert [SHACL](https://www.w3.org/TR/shacl/) into first order logic sentences in the [SCL language](https://doi.org/10.1016/j.websem.2022.100721) and compute the answer to a number of decision problems.
 
 Currently, it supports four modes:
 
@@ -12,7 +12,7 @@ Currently, it supports four modes:
 The outputs of this tool are two:
 
 * Firstly, the desired first order logic theory in the TPTP format: http://www.tptp.org/
-* Secondly, the answer to the satisfiability/containment/validation decision problems, by applying a desired theorem prover.
+* Secondly, the answer to the satisfiability/containment/validation/validity-under-updates decision problems, by applying a desired theorem prover.
 
 ## Setup
 
@@ -86,7 +86,7 @@ If your TPTP file is satisfiable (and thus if the original SHACL document is sat
 
 ## Running Performance Evaluation
 
-The executable JAR file can be configured to run the evaluation by setting the following parameter:
+This section explains how to replicate the results shown in the <em>SHACL Validation under Graph Updates</em> (see citation below) paper. The executable JAR file can be configured to run the evaluation by setting the following parameter:
 * arg[0] the word 'evaluation'
 
 The `TestActions.java` file contains the functions to run a performance evaluation of the evaluation of a shape validity preservation under updates check. To run the experiments in the paper "SHACL Validation under Graph Updates" run the main method of `TestActions.java`. To run custom evaluation checks, you can use one of the following two methods:
@@ -115,3 +115,9 @@ Out of the filter components, only the sh:NodeKind has been implemented. All of 
 * TPTP Format Problem http://www.tptp.org/TPTP/QuickGuide/Problems.html
 * E Prover manual http://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_2.6/eprover.pdf
 * E Prover installation instructions http://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_2.6/README
+
+## References:
+For more information, or to cite this work, please refer to the following paper:
+* Shqiponja Ahmetaj, George Konstantinidis, Magdalena Ortiz, Paolo Pareti and Mantas Šimkus. SHACL Validation under Graph Updates. International Semantic Web Conference (2025) <em>accepted and to appear in proceedings</em>
+
+The previous version of this tool in the <em>2022-arXiv-version</em> branch was described in this [arXiv](https://arxiv.org/abs/2406.08018) paper.
