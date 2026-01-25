@@ -51,7 +51,9 @@ proverArguments=--saturation_algorithm fmb
 
 ## Action JSON Data Model
 
-Actions should be specified as a JSON file containing a list of action objects, meant to be performed in the given order. Strings containing IRIs or RDF shape should be appropriately escaped to be valid JSON strings. Please see `actions1.json` in the Runnable folder a valid example. Two action types are defined:
+Actions should be specified as a JSON file containing a list of action objects, meant to be performed in the given order. Strings containing IRIs or RDF shape should be appropriately escaped to be valid JSON strings. Please see `actions1.json` in the Runnable folder a valid example, and note the explanation on constants/variables below. 
+
+Two action types are defined:
 
 *Path Actions*
 
@@ -72,6 +74,7 @@ This action adds/removes a triple x r y, between all the nodes x in the graph th
 * `subjectShape` a string representation of Shape1
 * `objectShape` a string representation of Shape2
 
+**Important Note on Constants/Variables**: If an IRI in the action file should be treated as a normal IRI, make sure to include it in the original shapes graph you want to perform static validation under updates with (as that is the one used to define the total list of known constants). You can add non-SHACL dummy triples in the shape graph for this purpose. Any IRI that is found in the action file but not in the original shapes graph will instead be considered a *variable*. In other words, it will represent an unkown constant that could be equal or different to any other unknown constants. For example, using SHAPE Actions you can define the action of adding triple `<:John, :type, :Student>` (adding John to the class Student) to the graph by using `<:s, sh:hasValue, :John>` and `<:s, sh:hasValue, :Student>` as subjectShape and objectShape respectively, making sure the original shapes graph contains node `:John`. Using variables allows you to define, for example, the action of adding `<:X, :type, :Student>` to the graph (adding someone to the class Student, but it could be anyone). To do this, define the action as per the `<:John, :type, :Student>` example, but make sure that the IRI `:X` is NOT a node of the original shapes graph. You can reuse any such variable across multiple shape constraints and across multiple actions in the action list, to refer to the same unknown entity in different places.
 
 ## Using a TPTP file with the E theorem prover
 
