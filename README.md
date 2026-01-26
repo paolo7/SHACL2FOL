@@ -76,6 +76,29 @@ This action adds/removes a triple x r y, between all the nodes x in the graph th
 
 **Important Note on Constants/Variables**: If an IRI in the action file should be treated as a normal IRI, make sure to include it in the original shapes graph you want to perform static validation under updates with (as that is the one used to define the total list of known constants). You can add non-SHACL dummy triples in the shape graph for this purpose. Any IRI that is found in the action file but not in the original shapes graph will instead be considered a *variable*. In other words, it will represent an unkown constant that could be equal or different to any other unknown constants. For example, using SHAPE Actions you can define the action of adding triple `<:John, :type, :Student>` (adding John to the class Student) to the graph by using `<:s, sh:hasValue, :John>` and `<:s, sh:hasValue, :Student>` as subjectShape and objectShape respectively, making sure the original shapes graph contains node `:John`. Using variables allows you to define, for example, the action of adding `<:X, :type, :Student>` to the graph (adding someone to the class Student, but it could be anyone). To do this, define the action as per the `<:John, :type, :Student>` example, but make sure that the IRI `:X` is NOT a node of the original shapes graph. You can reuse any such variable across multiple shape constraints and across multiple actions in the action list, to refer to the same unknown entity in different places.
 
+### Action Examples
+
+The `runnable` subfolder contains the following examples from the article cited below [1].
+
+It contains the following two shapes:
+* **health_shapes.ttl** It states that Patients must be either Active or Discharged, and that any entity that treats a patient must either be a recorded Physician, or they must be treating at least one Active Patient
+* **health_shapes2.ttl** It states that Patients must be either Active or Discharged, and that any entity that treats a patient must either be a recorded Physician, or they must be treating at least one Active Patient, and every patient they treat must be an Active Patient
+
+It contains the following two action files:
+* **health_actions.json** it contains 3 actions: 1) an unspecified node P1 (using P1 as a variable) is removed from the class Active Patient, then 2) P1 is added to the Discharge Patient class and then 3) any record of someone treating this patient is removed (any :treatsPatient edge to P1 is removed from the graph).
+* **health_actions2.json** identical to **health_actions.json**, but without the third action
+
+Running the static validation under updates with the following shape-action pair of files gives us the following results:
+* **health_shapes.ttl**, **health_actions.json**: the actions do not preserve validity, as one can clearly verify on this graph, if P1 is a variable equal to :B :
+```
+:D :treatsPatient :A .
+:D :treatsPatient :B .
+:A rdf:type :DischargePatient .
+:B rdf:type :ActivePatient .
+```
+* **health_shapes2.ttl**, **health_actions.json**: the actions preserve validity. Unlike the example above, the :treatsPatient relation now can only have Active Patients as objects. The actions ensure that both the status of a patient, and its incoming :treatsPatient edges are updated according to the constraints of the shapes.
+* **health_shapes.ttl**, **health_actions2.json** and **health_shapes2.ttl**, **health_actions2.json**: both of those shape action pairs do not preserve validity. This is because **health_actions2.json** "forgets" to update the :treatsPatient edges, which might result in someone being recorded as treating only a discharged patient, in possible violation of the Physician shape.
+
 ## Using a TPTP file with the E theorem prover
 
 You can evaluate the satisfiability of a FOL theory in TPTP format using the E theorem prover.
@@ -121,6 +144,6 @@ Out of the filter components, only the sh:NodeKind has been implemented. All of 
 
 ## References:
 For more information, or to cite this work, please refer to the following paper:
-* Shqiponja Ahmetaj, George Konstantinidis, Magdalena Ortiz, Paolo Pareti and Mantas Šimkus. SHACL Validation under Graph Updates. International Semantic Web Conference (2025) <em>accepted and to appear in proceedings</em>
+* [1] Shqiponja Ahmetaj, George Konstantinidis, Magdalena Ortiz, Paolo Pareti and Mantas Šimkus. SHACL Validation under Graph Updates. International Semantic Web Conference (2025) <em>accepted and to appear in proceedings</em>
 
 The previous version of this tool in the <em>2022-arXiv-version</em> branch was described in this [arXiv](https://arxiv.org/abs/2406.08018) paper.
